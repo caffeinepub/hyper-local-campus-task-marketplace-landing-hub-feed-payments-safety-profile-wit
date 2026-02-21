@@ -1,0 +1,34 @@
+{
+  "kind": "build_request",
+  "title": "Add back arrow navigation from profile to hub",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Add a back arrow button in the ProfileView component that navigates to the hub page when clicked",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-latest"
+        ],
+        "quotes": [
+          "give a back arrow option on the profile page that takes you back to the hub page"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A back arrow button is visible on the profile page",
+        "Clicking the back arrow navigates the user to the hub page",
+        "The back arrow is positioned appropriately in the ProfileView layout"
+      ]
+    }
+  ],
+  "constraints": [],
+  "nonGoals": [
+    "Changing the existing profile page functionality beyond adding navigation",
+    "Modifying the hub page layout or components"
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

@@ -1,2 +1,3 @@
-# hyper-local-campus-task-marketplace-landing-hub-feed-payments-safety-profile-wit
-Exported from Caffeine project: Creator-only delete option for posts (tasks)
+## 
+
+To run app build and run docker image: `docker build -t app . docker run -it --network host app`
