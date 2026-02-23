@@ -1,24 +1,38 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-21T15:18:18.542Z",
+  "generatedAt": "2026-02-21T15:48:11.943Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 1,
-    "implemented": 1,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
-        "id": "REQ-1",
-        "summary": "Add a back arrow button in the ProfileView component that navigates to the hub page when clicked",
+        "id": "REQ-2",
+        "summary": "Generate a QR code from the UPI ID that the user will provide, and display it in the application interface",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/views/ProfileView.tsx"
+          "frontend/src/components/QRCodeDisplay.tsx",
+          "frontend/src/components/TaskDetailsSheet.tsx",
+          "frontend/package.json"
         ],
         "matchedFiles": [
-          "frontend/src/views/ProfileView.tsx"
+          "frontend/src/components/QRCodeDisplay.tsx",
+          "frontend/src/components/TaskDetailsSheet.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Use the UPI_ID constant from frontend/src/config/constants.ts as the payment identifier for QR code generation",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/QRCodeDisplay.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/QRCodeDisplay.tsx"
         ]
       }
     ]
@@ -28,7 +42,10 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/views/ProfileView.tsx",
+    "frontend/index.html",
+    "frontend/src/components/QRCodeDisplay.tsx",
+    "frontend/src/components/TaskDetailsSheet.tsx",
+    "frontend/src/utils/deepLinks.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

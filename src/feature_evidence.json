@@ -2,10 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-a-back-arrow-button-in-the-profileview-component-that-navigates-to-the-hub-page-when-clicked",
-      "featureTitle": "Add a back arrow button in the ProfileView component that navigates to the hub page when clicked",
+      "featureId": "feature-generate-a-qr-code-from-the-upi-id-that-the-user-will-provide-and-display-it-in-the-application-interface",
+      "featureTitle": "Generate a QR code from the UPI ID that the user will provide, and display it in the application interface",
       "files": [
-        "frontend/src/views/ProfileView.tsx"
+        "frontend/src/components/QRCodeDisplay.tsx",
+        "frontend/src/components/TaskDetailsSheet.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,7 +18,27 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-use-the-upi-id-constant-from-frontend-src-config-constants-ts-as-the-payment-identifier-for-qr-code-generation",
+      "featureTitle": "Use the UPI_ID constant from frontend/src/config/constants.ts as the payment identifier for QR code generation",
+      "files": [
+        "frontend/src/components/QRCodeDisplay.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
       ],
       "confidence": "high"
     }

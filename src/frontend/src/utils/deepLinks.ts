@@ -16,3 +16,12 @@ export function buildUPILink(price: bigint): string {
   // Build UPI deep link
   return `upi://pay?pa=${UPI_ID}&pn=CampusApp&am=${totalAmount}`;
 }
+
+// Generate UPI deep link for QR code generation
+export function generateUPIDeepLink(price: number): string {
+  // Calculate amount with 10% platform fee
+  const totalAmount = (price * 1.10).toFixed(2);
+  
+  // Build UPI deep link
+  return `upi://pay?pa=${UPI_ID}&pn=PROXIIS&am=${totalAmount}&cu=INR`;
+}

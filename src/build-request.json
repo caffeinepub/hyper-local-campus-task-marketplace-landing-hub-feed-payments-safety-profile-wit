@@ -1,31 +1,51 @@
 {
   "kind": "build_request",
-  "title": "Add back arrow navigation from profile to hub",
+  "title": "Add QR code generation from UPI ID",
+  "projectName": "PROXIIS",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Add a back arrow button in the ProfileView component that navigates to the hub page when clicked",
+      "id": "REQ-2",
+      "text": "Generate a QR code from the UPI ID that the user will provide, and display it in the application interface",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-latest"
+          "msg-6"
         ],
         "quotes": [
-          "give a back arrow option on the profile page that takes you back to the hub page"
+          "can you add a qr code out of the upi id which ill sent you now??"
         ]
       },
       "acceptanceCriteria": [
-        "A back arrow button is visible on the profile page",
-        "Clicking the back arrow navigates the user to the hub page",
-        "The back arrow is positioned appropriately in the ProfileView layout"
+        "QR code is generated from the UPI payment string format",
+        "QR code is scannable and initiates UPI payment with correct details",
+        "QR code is displayed in a user-accessible location in the UI"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Use the UPI_ID constant from frontend/src/config/constants.ts as the payment identifier for QR code generation",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ]
+      },
+      "acceptanceCriteria": [
+        "QR code uses the existing UPI_ID configuration value",
+        "Payment amount calculation includes the 10% platform fee as per existing implementation"
       ]
     }
   ],
-  "constraints": [],
+  "constraints": [
+    "Do not modify backend/main.mo",
+    "Use existing UPI_ID constant from frontend/src/config/constants.ts",
+    "Maintain consistency with existing payment flow and fee calculation"
+  ],
   "nonGoals": [
-    "Changing the existing profile page functionality beyond adding navigation",
-    "Modifying the hub page layout or components"
+    "Modifying the backend payment logic",
+    "Changing the UPI ID value or configuration structure",
+    "Adding new payment methods beyond UPI"
   ],
   "imageRequirements": {
     "required": [],

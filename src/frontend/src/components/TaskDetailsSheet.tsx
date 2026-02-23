@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import CompleteTaskModal from './CompleteTaskModal';
+import QRCodeDisplay from './QRCodeDisplay';
 import { useInternetIdentity } from '@/hooks/useInternetIdentity';
 import { useAssignPerformer, useToggleTelegramDiscussion, useDeleteTask } from '@/hooks/useTaskActions';
 import { buildTelegramLink, buildUPILink } from '@/utils/deepLinks';
@@ -169,6 +170,11 @@ export default function TaskDetailsSheet({ task, open, onOpenChange }: TaskDetai
                 </div>
               )}
             </div>
+
+            {/* QR Code Section - Show for tasks that can be accepted */}
+            {canAccept && (
+              <QRCodeDisplay taskId={task.id} price={task.price} />
+            )}
 
             {/* Actions */}
             <div className="space-y-3 pt-4">

@@ -1,21 +1,46 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add back arrow navigation from profile to hub",
+  "title": "Add QR code generation from UPI ID",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Add a back arrow button in the ProfileView component that navigates to the hub page when clicked",
+      "id": "REQ-2",
+      "summary": "Generate and display scannable QR code from UPI payment string in the task details interface",
       "acceptanceCriteria": [
-        "A back arrow button is visible on the profile page",
-        "Clicking the back arrow navigates the user to the hub page",
-        "The back arrow is positioned appropriately in the ProfileView layout"
+        "QR code is generated from the UPI payment string format",
+        "QR code is scannable and initiates UPI payment with correct details",
+        "QR code is displayed in a user-accessible location in the UI"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/views/ProfileView.tsx",
+          "path": "frontend/src/components/QRCodeDisplay.tsx",
+          "operation": "create",
+          "description": "Create a reusable QRCodeDisplay component that generates and renders a QR code from a UPI payment URL. The component accepts taskId and price as props, uses the generateUPIDeepLink utility to construct the payment URL with platform fee, and renders the QR code using the qrcode.react library. Include proper error handling and loading states."
+        },
+        {
+          "path": "frontend/src/components/TaskDetailsSheet.tsx",
           "operation": "modify",
-          "description": "Add a back arrow button at the top of the ProfileView component that calls setCurrentView('hub') when clicked. Position the button using absolute or fixed positioning in the top-left area of the view, ensuring it's visible and accessible. Use an appropriate icon from lucide-react (e.g., ArrowLeft) and style it consistently with the app's design system."
+          "description": "Integrate the QRCodeDisplay component into the task details sheet. Add a QR code section below the task description that displays the payment QR code for the task. Position it prominently so users can easily scan it for UPI payment. Ensure the QR code is only shown when appropriate (e.g., for tasks that require payment)."
+        },
+        {
+          "path": "frontend/package.json",
+          "operation": "modify",
+          "description": "Add the qrcode.react library as a dependency to enable QR code generation functionality in the frontend."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Use existing UPI_ID constant and maintain consistency with current payment fee calculation",
+      "acceptanceCriteria": [
+        "QR code uses the existing UPI_ID configuration value",
+        "Payment amount calculation includes the 10% platform fee as per existing implementation"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/QRCodeDisplay.tsx",
+          "operation": "modify",
+          "description": "Ensure the QRCodeDisplay component imports and uses the UPI_ID constant from frontend/src/config/constants.ts and calls generateUPIDeepLink from frontend/src/utils/deepLinks.ts to construct the payment URL. This ensures the QR code uses the correct UPI ID and includes the 10% platform fee calculation that is already implemented in the utility function."
         }
       ]
     }

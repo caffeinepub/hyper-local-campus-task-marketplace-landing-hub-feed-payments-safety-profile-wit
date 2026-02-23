@@ -7,7 +7,7 @@
   "frontend/src/components/HubTopBar.tsx": "Enhanced top navigation bar with larger, bolder PROXIIS branding (text-4xl, font-black), improved spacing (px-5, py-5, gap-3), color-coded hover states for search/notifications/leaderboard/profile using the vibrant palette, and profile icon button that triggers navigation to profile view.",
   "frontend/src/components/CategorySelector.tsx": "Improved category selector with rounded-full pill buttons, enhanced selection state using coral-to-amber gradient with glow shadow, smooth horizontal scrolling, and better hover feedback with primary color accents.",
   "frontend/src/components/TaskCard.tsx": "Redesigned task card with enhanced visual hierarchy featuring bolder title, improved spacing, gradient price display with ₹ symbol using IndianRupee icon, color-coded icons, hover scale effect on image, coral glow shadow on hover, and profile-based authentication check that prevents opening task details sheet and shows toast notification for users without profiles.",
-  "frontend/src/components/TaskDetailsSheet.tsx": "Task details sheet with photo, location, price with ₹ symbol using IndianRupee icon, deadline, actions including Telegram discussion toggle, and a creator-only delete post button with confirmation dialog that shows loading state and toasts success/error messages.",
+  "frontend/src/components/TaskDetailsSheet.tsx": "Task details sheet with photo, location, price, deadline, QR code payment display for available tasks, Telegram discussion toggle, and creator-only delete post button with confirmation dialog.",
   "frontend/src/components/PostTaskModal.tsx": "Task creation modal with actor readiness checks, connection status display, and disabled state when actor is unavailable; fixed conflicting Tailwind classnames (removed block from flex label).",
   "frontend/src/components/CompleteTaskModal.tsx": "Modal for performers to upload completion photos and creators to verify/rate tasks.",
   "frontend/src/components/LeaderboardPanel.tsx": "Ranked list of top earners with earnings, tasks completed, and ratings.",
@@ -16,12 +16,13 @@
   "frontend/src/hooks/useTaskActions.ts": "React Query mutations for task actions with enhanced actor availability validation and clear error messages.",
   "frontend/src/hooks/useProfile.ts": "React Query hooks for fetching user profile data (task performance metrics) and user profile information (name, Gmail address) from backend with proper actor availability checks; includes mutations for creating profiles with Google and saving profiles manually.",
   "frontend/src/hooks/useLeaderboard.ts": "React Query hook for fetching leaderboard data sorted by earnings.",
-  "frontend/src/utils/deepLinks.ts": "Utility functions for building Telegram and UPI deep links with platform fee calculation.",
+  "frontend/src/utils/deepLinks.ts": "Utility functions for building Telegram and UPI deep links with platform fee calculation, including a dedicated function for generating UPI deep links for QR code display.",
   "frontend/src/config/constants.ts": "Configuration constants including UPI ID for payment processing.",
   "frontend/src/index.css": "Global styles with vibrant coral-teal-amber OKLCH color palette (avoiding blue/purple), smooth scrolling utilities, and dark mode theme optimized for the task marketplace.",
   "frontend/tailwind.config.js": "Tailwind configuration extended with coral-teal-amber color tokens, custom glow shadows, enhanced border radius scale, display font family, and fade-in animation for the vibrant hub theme.",
-  "frontend/index.html": "HTML entry point with document title set to \"PROXIIS\" and Google Identity Services SDK script loaded for OAuth functionality.",
+  "frontend/index.html": "HTML entry point with document title set to \"PROXIIS\", Google Identity Services SDK, and QRCode.js library loaded via CDN for QR code generation functionality.",
   "frontend/src/utils/time.ts": "Time conversion utilities for converting between datetime-local input strings and Time bigint (nanoseconds), plus human-readable deadline formatting using Intl.DateTimeFormat.",
   "frontend/src/components/FilterBar.tsx": "Filter bar component with three pill-shaped buttons (Newest, Most Urgent 🔥, Highest Paying 💰) that toggle sorting filters with blue highlight for active state.",
-  "frontend/src/hooks/useGoogleAuth.ts": "Custom React hook managing Google OAuth authentication with proper SDK initialization, credential handling, JWT decoding, and comprehensive error handling for sign-in/sign-out functionality."
+  "frontend/src/hooks/useGoogleAuth.ts": "Custom React hook managing Google OAuth authentication with proper SDK initialization, credential handling, JWT decoding, and comprehensive error handling for sign-in/sign-out functionality.",
+  "frontend/src/components/QRCodeDisplay.tsx": "Reusable component that generates and displays a scannable QR code from UPI payment URL using the CDN-loaded QRCode.js library, showing the payment amount with platform fee included."
 }

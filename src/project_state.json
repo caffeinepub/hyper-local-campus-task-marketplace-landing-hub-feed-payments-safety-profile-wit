@@ -7,10 +7,18 @@
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-add-a-back-arrow-button-in-the-profileview-component-that-navigates-to-the-hub-page-when-clicked",
-      "title": "Add a back arrow button in the ProfileView component that navigates to the hub page when clicked",
+      "id": "feature-generate-a-qr-code-from-the-upi-id-that-the-user-will-provide-and-display-it-in-the-application-interface",
+      "title": "Generate a QR code from the UPI ID that the user will provide, and display it in the application interface",
       "reqIds": [
-        "REQ-1"
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-use-the-upi-id-constant-from-frontend-src-config-constants-ts-as-the-payment-identifier-for-qr-code-generation",
+      "title": "Use the UPI_ID constant from frontend/src/config/constants.ts as the payment identifier for QR code generation",
+      "reqIds": [
+        "REQ-3"
       ],
       "version": 1
     }
@@ -18,12 +26,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add back arrow navigation from profile page to hub page",
+      "summary": "Add QR code generation from UPI ID",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Add back arrow navigation from profile to hub",
+  "projectName": "PROXIIS",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
