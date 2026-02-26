@@ -1,14 +1,36 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-26T21:47:07.794Z",
-  "summary": "The diff correctly implements REQ-1 by replacing the old 'Connection is still initializing. Please wait a moment and try again.' message with 'Make an account first to post the task in proxies.' in HubView.tsx. The change is isolated to the toast.error call in the handlePostTask function, with no other behavioral changes observed.",
-  "missing_requirements": [],
-  "hallucinated_features": [],
-  "confidence": 0.97,
+  "generatedAt": "2026-02-26T22:01:18.714Z",
+  "summary": "The diff implements all three requirements with good coverage. REQ-1 onboarding flow (login → setup → dashboard gating) is implemented in ProfileView.tsx. REQ-2 stat cards are implemented in DashboardStatsPanel.tsx with loading skeletons and neon theme. REQ-3 backend Profile type is extended with tasksPosted, averageRating, and totalRatingsCount in main.mo. One concern is that the main.mo diff is truncated so mutation update logic for task completion and verification cannot be confirmed.",
+  "missing_requirements": [
+    {
+      "id": "REQ-3",
+      "requirement": "Rating and completion counts are updated correctly by existing task completion and verification mutations",
+      "reason": "The diff for main.mo is truncated and does not show whether the task completion and verification mutation handlers have been updated to increment tasksCompleted, ratingSum, ratingCount, or tasksPosted correctly. The migration adds tasksPosted=0 defaults but the mutation logic updating these fields on task completion/verification is not visible in the provided diff.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "A standalone migration module was added as a separate Motoko file (backend/migration.mo)",
+      "reason": "The build request constraint states all Motoko logic must remain in the single main actor file (backend/main.mo). Adding a separate migration.mo module violates this constraint even though it is imported from main.mo.",
+      "evidence": [
+        "backend/migration.mo",
+        "backend/main.mo"
+      ]
+    }
+  ],
+  "confidence": 0.72,
   "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/views/HubView.tsx",
+    "frontend/src/components/DashboardStatsPanel.tsx",
+    "frontend/src/hooks/useProfile.ts",
+    "frontend/src/views/ProfileView.tsx",
     "project_state.json"
   ]
 }

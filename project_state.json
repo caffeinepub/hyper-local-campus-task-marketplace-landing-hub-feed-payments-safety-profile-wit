@@ -1,16 +1,24 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App with account creation flow and task posting feature for proxies/proxiis service.",
+  "summary": "App with profile/account creation flow and user dashboard showing task completed, user ratings, total ratings, and related stats.",
   "architectural_notes": [],
   "known_issues": [],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-in-hubview-tsx-replace-the-message-connection-is-still-initializing-please-wait-a-moment-and-try-again-shown-when-the-user-tries-to-post-a-task-but-is-not-yet-authenticated-or-connected-with-the-message-make-an-account-first-to-post-the-task-in-proxies",
-      "title": "In HubView.tsx, replace the message 'Connection is still initializing. Please wait a moment and try again.' (shown when the user tries to post a task but is not yet authenticated or connected) with the message 'Make an account first to post the task in proxies.'",
+      "id": "feature-when-the-user-clicks-the-profile-icon-in-hubtopbar-if-the-user-does-not-have-an-existing-profile-guide-them-through-the-account-creation-flow-internet-identity-authentication-google-sign-in-for-gmail-linking-profile-details-form-before-granting-access-to-the-profile-view-only-after-a-profile-is-successfully-created-or-confirmed-to-exist-should-the-dashboard-be-displayed",
+      "title": "When the user clicks the profile icon in HubTopBar, if the user does not have an existing profile, guide them through the account creation flow (Internet Identity authentication + Google Sign-In for Gmail linking + profile details form) before granting access to the profile view. Only after a profile is successfully created or confirmed to exist should the dashboard be displayed.",
       "reqIds": [
         "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-user-dashboard-section-within-profileview-that-displays-the-following-stat-cards-for-the-authenticated-user-1-tasks-completed-total-number-of-tasks-the-user-has-completed-as-a-performer-2-user-rating-the-user-s-average-star-rating-received-from-task-creators-3-total-ratings-the-total-number-of-rating-reviews-the-user-has-received-and-4-tasks-posted-total-number-of-tasks-the-user-has-created-fetch-this-data-from-the-user-s-backend-profile-record",
+      "title": "Add a user dashboard section within ProfileView that displays the following stat cards for the authenticated user: (1) Tasks Completed — total number of tasks the user has completed as a performer, (2) User Rating — the user's average star rating received from task creators, (3) Total Ratings — the total number of rating reviews the user has received, and (4) Tasks Posted — total number of tasks the user has created. Fetch this data from the user's backend Profile record.",
+      "reqIds": [
+        "REQ-2"
       ],
       "version": 1
     }
@@ -18,13 +26,27 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Replace 'connection is still initializing' message with 'Make an account first to post the task in proxies'",
+      "summary": "Profile icon click triggers account creation flow before showing user dashboard",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "User dashboard showing tasks completed, user ratings, total ratings, and related stats",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Ensure the backend Profile type and related query endpoints expose all necessary fields for the dashboard stats: tasksCompleted count, averageRating, totalRatingsCount, and tasksPosted count. Add or update these fields in the Motoko actor if they are not already present or not returned by the existing getProfile/getCallerProfile endpoints.",
+      "reqIds": [
+        "REQ-3"
+      ],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "Proxiis",
+  "projectName": "PROXIIS",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

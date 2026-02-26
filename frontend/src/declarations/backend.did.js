@@ -27,16 +27,19 @@ export const UserRole = IDL.Variant({
 export const TaskId = IDL.Nat;
 export const ExternalBlob = IDL.Vec(IDL.Nat8);
 export const Time = IDL.Int;
+export const Profile = IDL.Record({
+  'ratingSum' : IDL.Nat,
+  'totalRatingsCount' : IDL.Nat,
+  'ratingCount' : IDL.Nat,
+  'tasksCompleted' : IDL.Nat,
+  'averageRating' : IDL.Nat,
+  'earnings' : IDL.Nat,
+  'tasksPosted' : IDL.Nat,
+});
 export const UserProfile = IDL.Record({
   'gmailAddress' : IDL.Opt(IDL.Text),
   'name' : IDL.Text,
   'postHistory' : IDL.Vec(TaskId),
-});
-export const Profile = IDL.Record({
-  'ratingSum' : IDL.Nat,
-  'ratingCount' : IDL.Nat,
-  'tasksCompleted' : IDL.Nat,
-  'earnings' : IDL.Nat,
 });
 export const Task = IDL.Record({
   'id' : TaskId,
@@ -110,6 +113,7 @@ export const idlService = IDL.Service({
     ),
   'createUserProfileWithGoogle' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'deleteTask' : IDL.Func([TaskId], [], []),
+  'getCallerProfile' : IDL.Func([], [Profile], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getCommentsForTask' : IDL.Func(
@@ -156,16 +160,19 @@ export const idlFactory = ({ IDL }) => {
   const TaskId = IDL.Nat;
   const ExternalBlob = IDL.Vec(IDL.Nat8);
   const Time = IDL.Int;
+  const Profile = IDL.Record({
+    'ratingSum' : IDL.Nat,
+    'totalRatingsCount' : IDL.Nat,
+    'ratingCount' : IDL.Nat,
+    'tasksCompleted' : IDL.Nat,
+    'averageRating' : IDL.Nat,
+    'earnings' : IDL.Nat,
+    'tasksPosted' : IDL.Nat,
+  });
   const UserProfile = IDL.Record({
     'gmailAddress' : IDL.Opt(IDL.Text),
     'name' : IDL.Text,
     'postHistory' : IDL.Vec(TaskId),
-  });
-  const Profile = IDL.Record({
-    'ratingSum' : IDL.Nat,
-    'ratingCount' : IDL.Nat,
-    'tasksCompleted' : IDL.Nat,
-    'earnings' : IDL.Nat,
   });
   const Task = IDL.Record({
     'id' : TaskId,
@@ -239,6 +246,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'createUserProfileWithGoogle' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'deleteTask' : IDL.Func([TaskId], [], []),
+    'getCallerProfile' : IDL.Func([], [Profile], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getCommentsForTask' : IDL.Func(

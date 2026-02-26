@@ -13,9 +13,12 @@ import type { Principal } from '@icp-sdk/core/principal';
 export type ExternalBlob = Uint8Array;
 export interface Profile {
   'ratingSum' : bigint,
+  'totalRatingsCount' : bigint,
   'ratingCount' : bigint,
   'tasksCompleted' : bigint,
+  'averageRating' : bigint,
   'earnings' : bigint,
+  'tasksPosted' : bigint,
 }
 export type Stars = { 'one' : null } |
   { 'two' : null } |
@@ -86,6 +89,7 @@ export interface _SERVICE {
   >,
   'createUserProfileWithGoogle' : ActorMethod<[string, string], undefined>,
   'deleteTask' : ActorMethod<[TaskId], undefined>,
+  'getCallerProfile' : ActorMethod<[], Profile>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getCommentsForTask' : ActorMethod<[bigint], Array<[string, string, string]>>,

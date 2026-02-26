@@ -22,6 +22,25 @@ export function useGetCallerProfile() {
   };
 }
 
+export function useGetCallerProfileStats() {
+  const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  const query = useQuery<Profile | null>({
+    queryKey: ['callerProfileStats', identity?.getPrincipal().toString()],
+    queryFn: async () => {
+      if (!actor || !identity) return null;
+      return actor.getCallerProfile();
+    },
+    enabled: !!actor && !!identity && !actorFetching,
+  });
+
+  return {
+    ...query,
+    isLoading: actorFetching || query.isLoading,
+  };
+}
+
 export function useGetCallerUserProfile() {
   const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
@@ -54,6 +73,7 @@ export function useCreateUserProfileWithGoogle() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['callerProfileStats'] });
     },
   });
 }
@@ -69,6 +89,7 @@ export function useSaveCallerUserProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['callerProfileStats'] });
     },
   });
 }

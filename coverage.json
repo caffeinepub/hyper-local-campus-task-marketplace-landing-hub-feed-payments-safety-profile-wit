@@ -1,34 +1,65 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-26T21:47:07.797Z",
+  "generatedAt": "2026-02-26T22:01:18.717Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 1,
-    "implemented": 1,
+    "total": 3,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "In HubView.tsx, replace the message 'Connection is still initializing. Please wait a moment and try again.' (shown when the user tries to post a task but is not yet authenticated or connected) with the message 'Make an account first to post the task in proxies.'",
+        "summary": "When the user clicks the profile icon in HubTopBar, if the user does not have an existing profile, guide them through the account creation flow (Internet Identity authentication + Google Sign-In for Gmail linking + profile details form) before granting access to the profile view. Only after a profile is successfully created or confirmed to exist should the dashboard be displayed.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/views/HubView.tsx"
+          "frontend/src/views/ProfileView.tsx",
+          "frontend/src/components/HubTopBar.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/views/HubView.tsx"
+          "frontend/src/views/ProfileView.tsx"
         ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Add a user dashboard section within ProfileView that displays the following stat cards for the authenticated user: (1) Tasks Completed — total number of tasks the user has completed as a performer, (2) User Rating — the user's average star rating received from task creators, (3) Total Ratings — the total number of rating reviews the user has received, and (4) Tasks Posted — total number of tasks the user has created. Fetch this data from the user's backend Profile record.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useProfile.ts",
+          "frontend/src/components/DashboardStatsPanel.tsx",
+          "frontend/src/views/ProfileView.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useProfile.ts",
+          "frontend/src/components/DashboardStatsPanel.tsx",
+          "frontend/src/views/ProfileView.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Ensure the backend Profile type and related query endpoints expose all necessary fields for the dashboard stats: tasksCompleted count, averageRating, totalRatingsCount, and tasksPosted count. Add or update these fields in the Motoko actor if they are not already present or not returned by the existing getProfile/getCallerProfile endpoints.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/views/HubView.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/DashboardStatsPanel.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useProfile.ts",
+    "frontend/src/views/ProfileView.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

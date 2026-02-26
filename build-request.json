@@ -1,36 +1,81 @@
 {
   "kind": "build_request",
-  "title": "Replace 'connection initializing' message with account creation prompt",
+  "title": "Profile icon account creation flow with user dashboard stats",
   "projectName": "PROXIIS",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In HubView.tsx, replace the message 'Connection is still initializing. Please wait a moment and try again.' (shown when the user tries to post a task but is not yet authenticated or connected) with the message 'Make an account first to post the task in proxies.'",
+      "text": "When the user clicks the profile icon in HubTopBar, if the user does not have an existing profile, guide them through the account creation flow (Internet Identity authentication + Google Sign-In for Gmail linking + profile details form) before granting access to the profile view. Only after a profile is successfully created or confirmed to exist should the dashboard be displayed.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "Instead of writing, connection is still initializing. Please wait a moment and try again. In this place, write. Make an account first to post the task in proxies."
+          "When the user clicks on the profile icon, let them create their account first, then show those dashboards"
         ]
       },
       "acceptanceCriteria": [
-        "The text 'Connection is still initializing. Please wait a moment and try again.' no longer appears anywhere in the UI when a user attempts to post a task without an account.",
-        "The text 'Make an account first to post the task in proxies.' is displayed in its place under the same triggering conditions.",
-        "All other behavior (guard logic, toast/modal display, navigation) remains unchanged."
+        "Clicking the profile icon when no profile exists initiates the account creation / onboarding flow",
+        "The user cannot access the dashboard until they have completed account creation",
+        "Clicking the profile icon when a profile already exists goes directly to the dashboard",
+        "The onboarding flow includes Internet Identity login, optional Google Sign-In for Gmail linking, and profile details entry",
+        "On successful profile creation, the user is transitioned to the dashboard view"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Add a user dashboard section within ProfileView that displays the following stat cards for the authenticated user: (1) Tasks Completed — total number of tasks the user has completed as a performer, (2) User Rating — the user's average star rating received from task creators, (3) Total Ratings — the total number of rating reviews the user has received, and (4) Tasks Posted — total number of tasks the user has created. Fetch this data from the user's backend Profile record.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "show those dashboards of task completed, user ratings, total ratings, and all those"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The dashboard displays a 'Tasks Completed' stat card with the correct count",
+        "The dashboard displays a 'User Rating' stat card showing the average star rating (e.g., 4.5 ★)",
+        "The dashboard displays a 'Total Ratings' stat card with the total number of ratings received",
+        "The dashboard displays a 'Tasks Posted' stat card with the correct count",
+        "All stats are loaded from the backend Profile data for the authenticated user",
+        "A loading skeleton is shown while data is being fetched",
+        "Stat cards use the existing PROXIIS neon/dark visual theme with the green-to-purple gradient accents"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Ensure the backend Profile type and related query endpoints expose all necessary fields for the dashboard stats: tasksCompleted count, averageRating, totalRatingsCount, and tasksPosted count. Add or update these fields in the Motoko actor if they are not already present or not returned by the existing getProfile/getCallerProfile endpoints.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "task completed, user ratings, total ratings"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The Profile type includes tasksCompleted, averageRating, totalRatingsReceived, and tasksPosted fields",
+        "The getCallerProfile (or equivalent) endpoint returns these fields populated with correct values",
+        "Existing profile creation and update logic initializes these fields to zero/empty defaults",
+        "Rating and completion counts are updated correctly by existing task completion and verification mutations"
       ]
     }
   ],
   "constraints": [
-    "Do not change any authentication or connection logic — only update the displayed message string.",
-    "Do not modify any files listed in frontend.immutablePaths."
+    "Do not modify any files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui",
+    "All Motoko logic must remain in the single main actor file (backend/main.mo)",
+    "Preserve the existing PROXIIS neon grid / dark theme visual identity"
   ],
   "nonGoals": [
-    "Changing the account creation flow itself.",
-    "Modifying backend connection or initialization logic.",
-    "Adding new UI elements beyond the updated message text."
+    "Redesigning the landing page or hub view",
+    "Adding new task categories or task management features",
+    "Leaderboard changes",
+    "Payment or QR code flow changes"
   ],
   "imageRequirements": {
     "required": [],
