@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-a-fixed-floating-action-button-fab-in-the-bottom-right-corner-of-the-hubview-that-when-clicked-opens-the-existing-posttaskmodal-for-creating-a-new-task-the-button-should-display-a-icon-be-visually-prominent-using-the-app-s-green-to-purple-gradient-style-and-be-always-visible-while-the-user-is-on-the-hub-view",
-      "featureTitle": "Add a fixed floating action button (FAB) in the bottom-right corner of the HubView that, when clicked, opens the existing PostTaskModal for creating a new task. The button should display a '+' icon, be visually prominent using the app's green-to-purple gradient style, and be always visible while the user is on the hub view.",
+      "featureId": "feature-in-hubview-tsx-replace-the-message-connection-is-still-initializing-please-wait-a-moment-and-try-again-shown-when-the-user-tries-to-post-a-task-but-is-not-yet-authenticated-or-connected-with-the-message-make-an-account-first-to-post-the-task-in-proxies",
+      "featureTitle": "In HubView.tsx, replace the message 'Connection is still initializing. Please wait a moment and try again.' (shown when the user tries to post a task but is not yet authenticated or connected) with the message 'Make an account first to post the task in proxies.'",
       "files": [
         "frontend/src/views/HubView.tsx"
       ],

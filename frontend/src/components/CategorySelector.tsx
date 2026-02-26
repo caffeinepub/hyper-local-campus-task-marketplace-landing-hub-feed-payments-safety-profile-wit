@@ -18,6 +18,11 @@ interface CategorySelectorProps {
 }
 
 export default function CategorySelector({ selectedCategory, onSelectCategory }: CategorySelectorProps) {
+  const handleCategoryClick = (category: string) => {
+    // Toggle: clicking the active category deselects it
+    onSelectCategory(selectedCategory === category ? null : category);
+  };
+
   return (
     <ScrollArea className="w-full scroll-smooth">
       <div className="flex gap-3 px-5 py-4">
@@ -38,7 +43,7 @@ export default function CategorySelector({ selectedCategory, onSelectCategory }:
             key={category}
             variant={selectedCategory === category ? 'default' : 'outline'}
             size="sm"
-            onClick={() => onSelectCategory(category)}
+            onClick={() => handleCategoryClick(category)}
             className={
               selectedCategory === category
                 ? 'bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] text-black hover:opacity-90 shadow-glow-green font-semibold px-5 rounded-full transition-all whitespace-nowrap'

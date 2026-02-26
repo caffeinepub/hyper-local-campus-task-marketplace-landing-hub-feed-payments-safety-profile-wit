@@ -1,23 +1,21 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add bottom-right floating plus button to open PostTaskModal",
+  "title": "Replace 'connection initializing' message with account creation prompt",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Add a fixed floating action button (FAB) in the bottom-right corner of the HubView that opens the PostTaskModal when clicked",
+      "summary": "Replace the 'Connection is still initializing' message in HubView.tsx with 'Make an account first to post the task in proxies' when users attempt to post without authentication",
       "acceptanceCriteria": [
-        "A circular FAB with a '+' icon is fixed to the bottom-right corner of the HubView (e.g., bottom-6 right-6 with z-index above task cards).",
-        "Clicking the FAB opens the PostTaskModal.",
-        "The FAB uses the app's green-to-purple gradient consistent with other active/primary controls in the app.",
-        "The FAB is visible on both mobile and desktop layouts.",
-        "Any existing 'Post Task' button or trigger in the HubView that duplicates this action is either removed or left in place without conflict."
+        "The text 'Connection is still initializing. Please wait a moment and try again.' no longer appears anywhere in the UI when a user attempts to post a task without an account.",
+        "The text 'Make an account first to post the task in proxies.' is displayed in its place under the same triggering conditions.",
+        "All other behavior (guard logic, toast/modal display, navigation) remains unchanged."
       ],
       "file_operations": [
         {
           "path": "frontend/src/views/HubView.tsx",
           "operation": "modify",
-          "description": "Add a fixed-position circular FAB in the bottom-right corner (using Tailwind classes such as 'fixed bottom-6 right-6 z-50') that displays a '+' icon. Apply the app's green-to-purple gradient (bg-gradient-to-r from-primary to-secondary) to match the existing active button styles seen in CategorySelector and FilterBar. Wire the FAB's onClick handler to set isPostModalOpen to true, triggering the existing PostTaskModal. Ensure the FAB is positioned above all task cards and is visible on both mobile and desktop viewports. If the existing 'Post New Task' button in the top section creates UI redundancy, consider removing it or keeping both for different use cases (desktop vs mobile)."
+          "description": "Update the error message shown when a user attempts to post a task without being authenticated or connected. Replace the message 'Connection is still initializing. Please wait a moment and try again.' with 'Make an account first to post the task in proxies.' Locate the guard logic that checks authentication state before allowing task posting and update only the message string, preserving all existing conditional logic, toast notifications, and modal display behavior."
         }
       ]
     }

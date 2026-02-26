@@ -1,12 +1,9 @@
 # Specification
 
 ## Summary
-**Goal:** Add a floating action button (FAB) in the bottom-right corner of the HubView that opens the existing PostTaskModal.
+**Goal:** Replace the "connection initializing" error message with an account creation prompt in HubView.tsx.
 
 **Planned changes:**
-- Add a fixed circular FAB with a '+' icon to the bottom-right corner of the HubView (bottom-6 right-6, high z-index)
-- Style the FAB using the app's green-to-purple gradient consistent with other primary controls
-- Wire the FAB's click handler to open the existing PostTaskModal component
-- Ensure the FAB is visible on both mobile and desktop layouts
+- In HubView.tsx, replace the message "Connection is still initializing. Please wait a moment and try again." with "Make an account first to post the task in proxies." for the case when a user tries to post a task without being authenticated or connected.
 
-**User-visible outcome:** Users on the HubView can click the bottom-right '+' button at any time to open the task creation modal and post a new task.
+**User-visible outcome:** When a user attempts to post a task without an account, they now see "Make an account first to post the task in proxies." instead of the previous connection message.

@@ -1,14 +1,14 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "A task posting app where users can submit tasks via a bottom-right plus button.",
+  "summary": "App with account creation flow and task posting feature for proxies/proxiis service.",
   "architectural_notes": [],
   "known_issues": [],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-add-a-fixed-floating-action-button-fab-in-the-bottom-right-corner-of-the-hubview-that-when-clicked-opens-the-existing-posttaskmodal-for-creating-a-new-task-the-button-should-display-a-icon-be-visually-prominent-using-the-app-s-green-to-purple-gradient-style-and-be-always-visible-while-the-user-is-on-the-hub-view",
-      "title": "Add a fixed floating action button (FAB) in the bottom-right corner of the HubView that, when clicked, opens the existing PostTaskModal for creating a new task. The button should display a '+' icon, be visually prominent using the app's green-to-purple gradient style, and be always visible while the user is on the hub view.",
+      "id": "feature-in-hubview-tsx-replace-the-message-connection-is-still-initializing-please-wait-a-moment-and-try-again-shown-when-the-user-tries-to-post-a-task-but-is-not-yet-authenticated-or-connected-with-the-message-make-an-account-first-to-post-the-task-in-proxies",
+      "title": "In HubView.tsx, replace the message 'Connection is still initializing. Please wait a moment and try again.' (shown when the user tries to post a task but is not yet authenticated or connected) with the message 'Make an account first to post the task in proxies.'",
       "reqIds": [
         "REQ-1"
       ],
@@ -18,13 +18,13 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add a bottom-right plus button that lets users post/create a new task",
+      "summary": "Replace 'connection is still initializing' message with 'Make an account first to post the task in proxies'",
       "reqIds": [],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "PROXIIS",
+  "projectName": "Proxiis",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

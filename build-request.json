@@ -1,38 +1,36 @@
 {
   "kind": "build_request",
-  "title": "Add bottom-right floating plus button to open PostTaskModal",
+  "title": "Replace 'connection initializing' message with account creation prompt",
   "projectName": "PROXIIS",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add a fixed floating action button (FAB) in the bottom-right corner of the HubView that, when clicked, opens the existing PostTaskModal for creating a new task. The button should display a '+' icon, be visually prominent using the app's green-to-purple gradient style, and be always visible while the user is on the hub view.",
+      "text": "In HubView.tsx, replace the message 'Connection is still initializing. Please wait a moment and try again.' (shown when the user tries to post a task but is not yet authenticated or connected) with the message 'Make an account first to post the task in proxies.'",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "let the user post their task by clicking on the botton right plus button"
+          "Instead of writing, connection is still initializing. Please wait a moment and try again. In this place, write. Make an account first to post the task in proxies."
         ]
       },
       "acceptanceCriteria": [
-        "A circular FAB with a '+' icon is fixed to the bottom-right corner of the HubView (e.g., bottom-6 right-6 with z-index above task cards).",
-        "Clicking the FAB opens the PostTaskModal.",
-        "The FAB uses the app's green-to-purple gradient consistent with other active/primary controls in the app.",
-        "The FAB is visible on both mobile and desktop layouts.",
-        "Any existing 'Post Task' button or trigger in the HubView that duplicates this action is either removed or left in place without conflict."
+        "The text 'Connection is still initializing. Please wait a moment and try again.' no longer appears anywhere in the UI when a user attempts to post a task without an account.",
+        "The text 'Make an account first to post the task in proxies.' is displayed in its place under the same triggering conditions.",
+        "All other behavior (guard logic, toast/modal display, navigation) remains unchanged."
       ]
     }
   ],
   "constraints": [
-    "Do not modify any files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui.",
-    "Reuse the existing PostTaskModal component — do not create a new modal."
+    "Do not change any authentication or connection logic — only update the displayed message string.",
+    "Do not modify any files listed in frontend.immutablePaths."
   ],
   "nonGoals": [
-    "Changes to the PostTaskModal form itself.",
-    "Backend changes.",
-    "Any new task creation logic beyond wiring the FAB to open the existing modal."
+    "Changing the account creation flow itself.",
+    "Modifying backend connection or initialization logic.",
+    "Adding new UI elements beyond the updated message text."
   ],
   "imageRequirements": {
     "required": [],
