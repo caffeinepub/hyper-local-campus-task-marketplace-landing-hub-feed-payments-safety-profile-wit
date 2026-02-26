@@ -1,24 +1,30 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "App with a hub page that includes task posting functionality via a floating action button.",
   "architectural_notes": [],
-  "known_issues": [
-    "Sign-in prompt incorrectly shows 'dismissed' state unexpectedly"
-  ],
-  "isFixRequest": true,
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-fix-the-authpromptbar-so-it-never-displays-a-sign-in-was-dismissed-message-unexpectedly-the-bar-should-only-show-a-dismissal-state-when-the-user-has-explicitly-closed-it-during-the-current-session-and-must-reset-correctly-when-a-new-protected-action-is-triggered",
-      "title": "Fix the AuthPromptBar so it never displays a 'Sign in was dismissed' message unexpectedly. The bar should only show a dismissal state when the user has explicitly closed it during the current session, and must reset correctly when a new protected action is triggered.",
+      "id": "feature-wire-the-floating-action-button-fab-in-the-bottom-right-corner-of-hubview-so-that-clicking-it-opens-the-posttaskmodal-for-authenticated-users-who-have-a-profile-if-the-user-is-not-authenticated-or-has-no-profile-trigger-the-existing-auth-profile-prompt-flow-matching-the-behaviour-already-used-by-taskcard-clicks",
+      "title": "Wire the floating action button (FAB) in the bottom-right corner of HubView so that clicking it opens the PostTaskModal for authenticated users who have a profile. If the user is not authenticated or has no profile, trigger the existing auth/profile prompt flow (matching the behaviour already used by TaskCard clicks).",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     }
   ],
-  "new_feature_requests": [],
-  "projectName": "Fix auth prompt bar showing incorrect 'dismissed' state",
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Make the plus button (bottom-right FAB) on the hub page functional so users can post a task",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "PROXIIS",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

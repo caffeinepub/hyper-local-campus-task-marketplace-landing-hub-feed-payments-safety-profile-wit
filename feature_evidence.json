@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-authpromptbar-so-it-never-displays-a-sign-in-was-dismissed-message-unexpectedly-the-bar-should-only-show-a-dismissal-state-when-the-user-has-explicitly-closed-it-during-the-current-session-and-must-reset-correctly-when-a-new-protected-action-is-triggered",
-      "featureTitle": "Fix the AuthPromptBar so it never displays a 'Sign in was dismissed' message unexpectedly. The bar should only show a dismissal state when the user has explicitly closed it during the current session, and must reset correctly when a new protected action is triggered.",
+      "featureId": "feature-wire-the-floating-action-button-fab-in-the-bottom-right-corner-of-hubview-so-that-clicking-it-opens-the-posttaskmodal-for-authenticated-users-who-have-a-profile-if-the-user-is-not-authenticated-or-has-no-profile-trigger-the-existing-auth-profile-prompt-flow-matching-the-behaviour-already-used-by-taskcard-clicks",
+      "featureTitle": "Wire the floating action button (FAB) in the bottom-right corner of HubView so that clicking it opens the PostTaskModal for authenticated users who have a profile. If the user is not authenticated or has no profile, trigger the existing auth/profile prompt flow (matching the behaviour already used by TaskCard clicks).",
       "files": [
-        "frontend/src/App.tsx"
+        "frontend/src/views/HubView.tsx"
       ],
       "components": [
         "authorization@4.0.0",

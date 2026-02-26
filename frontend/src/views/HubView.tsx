@@ -31,7 +31,7 @@ export default function HubView({ onNavigate }: HubViewProps) {
 
   const isAuthenticated = !!identity;
   const isActorReady = !!actor && !actorLoading;
-  const hasProfile = userProfile !== null;
+  const hasProfile = userProfile !== null && userProfile !== undefined;
 
   const filteredAndSortedTasks = useMemo(() => {
     let filtered = tasks.filter(task => {
@@ -75,7 +75,7 @@ export default function HubView({ onNavigate }: HubViewProps) {
       return;
     }
     if (!hasProfile) {
-      toast.error('Please create an account first on proxy to post tasks');
+      toast.error('Please create a profile first before posting tasks.');
       return;
     }
     setIsPostModalOpen(true);
@@ -124,10 +124,10 @@ export default function HubView({ onNavigate }: HubViewProps) {
         </div>
       </main>
 
+      {/* Floating Action Button — always clickable; guard logic is in handlePostTask */}
       <Button
         onClick={handlePostTask}
-        disabled={isAuthenticated && (!isActorReady || !hasProfile)}
-        className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-2xl bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] hover:opacity-90 text-black z-40 disabled:opacity-50"
+        className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-2xl bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] hover:opacity-90 text-black z-40"
         size="icon"
       >
         <Plus className="w-8 h-8" />

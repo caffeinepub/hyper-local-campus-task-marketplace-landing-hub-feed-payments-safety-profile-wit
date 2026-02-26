@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Fix the AuthPromptBar so it never incorrectly displays a "dismissed" state on load or when a new protected action is triggered.
+**Goal:** Wire the existing floating action button (FAB) on the HubView page so that clicking it opens the PostTaskModal, using the same auth/profile guard logic already in place.
 
 **Planned changes:**
-- Ensure the dismissed state is only set when the user explicitly closes the AuthPromptBar during the current session.
-- Reset the dismissed state whenever a new protected action triggers the auth prompt.
-- Clear the dismissed state on navigation away or page reload so no stale state persists across sessions.
+- Connect the FAB's `onClick` handler in HubView to open the existing PostTaskModal.
+- Reuse the existing auth/profile guard logic (same as TaskCard clicks) to prompt unauthenticated users or users without a profile appropriately.
+- After successful task submission via the modal, refresh the task list on HubView to include the new task.
 
-**User-visible outcome:** The AuthPromptBar no longer shows a "Sign in was dismissed" message unexpectedly; it only shows that message after the user has actively dismissed it, and resets properly for new prompts.
+**User-visible outcome:** Users can click the plus FAB on the Hub page to post a new task directly. Unauthenticated users or those without a profile are guided through the existing prompt flow, and authenticated users with a profile see the PostTaskModal open immediately.

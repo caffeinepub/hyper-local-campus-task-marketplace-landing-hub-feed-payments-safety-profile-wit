@@ -1,35 +1,39 @@
 {
   "kind": "build_request",
-  "title": "Fix auth prompt bar showing incorrect 'dismissed' state",
-  "priority": "high",
+  "title": "Make plus FAB on Hub page open PostTaskModal",
+  "projectName": "PROXIIS",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the AuthPromptBar so it never displays a 'Sign in was dismissed' message unexpectedly. The bar should only show a dismissal state when the user has explicitly closed it during the current session, and must reset correctly when a new protected action is triggered.",
+      "text": "Wire the floating action button (FAB) in the bottom-right corner of HubView so that clicking it opens the PostTaskModal for authenticated users who have a profile. If the user is not authenticated or has no profile, trigger the existing auth/profile prompt flow (matching the behaviour already used by TaskCard clicks).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-7"
         ],
         "quotes": [
-          "why does it wright their sign in was dismised??"
+          "make the plus button in the right bottom side of the hub page functional so that the user can post a task through it"
         ]
       },
       "acceptanceCriteria": [
-        "Opening the app or performing a protected action does not show a 'dismissed' message unless the user actually dismissed the bar in the same session.",
-        "Triggering a new protected action after a previous dismissal re-shows the prompt bar in its default (non-dismissed) state.",
-        "The dismissed state is reset when the user navigates away or a new auth prompt is triggered.",
-        "No stale dismissed state persists across page reloads or new sessions."
+        "Clicking the FAB on HubView opens PostTaskModal for a logged-in user with a profile.",
+        "Clicking the FAB when the user is not authenticated shows the existing authentication prompt (AuthPromptBar or equivalent flow).",
+        "Clicking the FAB when the user is authenticated but has no profile shows the existing profile-creation prompt flow.",
+        "After a task is successfully submitted via the modal, the task list on HubView refreshes to include the new task.",
+        "The FAB remains visible and accessible at the bottom-right of the page across all filter/category states."
       ]
     }
   ],
   "constraints": [
-    "Do not modify files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui."
+    "Do not modify any files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui.",
+    "Re-use the existing PostTaskModal component — do not create a duplicate modal.",
+    "Re-use the existing auth/profile guard logic already present in HubView rather than duplicating it."
   ],
   "nonGoals": [
-    "Redesigning the AuthPromptBar appearance or animation.",
-    "Changes to backend authentication logic.",
-    "Adding new authentication methods."
+    "Changes to the PostTaskModal form fields or submission logic.",
+    "Changes to backend task creation logic.",
+    "Any redesign of the FAB button appearance."
   ],
   "imageRequirements": {
     "required": [],

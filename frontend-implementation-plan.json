@@ -1,27 +1,23 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix AuthPromptBar incorrect dismissed state",
+  "title": "Make plus FAB on Hub page open PostTaskModal",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Fix the AuthPromptBar to correctly manage dismissed state, ensuring it only shows 'Sign in was dismissed' when explicitly dismissed by the user during the current session, and resets when new protected actions are triggered",
+      "summary": "Wire the floating action button (FAB) in the bottom-right corner of HubView to open PostTaskModal for authenticated users with profiles, or trigger the existing auth/profile prompt flow if conditions aren't met",
       "acceptanceCriteria": [
-        "Opening the app or performing a protected action does not show a 'dismissed' message unless the user actually dismissed the bar in the same session.",
-        "Triggering a new protected action after a previous dismissal re-shows the prompt bar in its default (non-dismissed) state.",
-        "The dismissed state is reset when the user navigates away or a new auth prompt is triggered.",
-        "No stale dismissed state persists across page reloads or new sessions."
+        "Clicking the FAB on HubView opens PostTaskModal for a logged-in user with a profile.",
+        "Clicking the FAB when the user is not authenticated shows the existing authentication prompt (AuthPromptBar or equivalent flow).",
+        "Clicking the FAB when the user is authenticated but has no profile shows the existing profile-creation prompt flow.",
+        "After a task is successfully submitted via the modal, the task list on HubView refreshes to include the new task.",
+        "The FAB remains visible and accessible at the bottom-right of the page across all filter/category states."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/views/HubView.tsx",
           "operation": "modify",
-          "description": "Review the AuthPromptContext implementation to ensure the dismissed state is properly scoped to individual prompt sessions and resets when a new protected action is triggered. Ensure the context value includes a mechanism to clear the dismissed flag when showAuthPrompt is called again."
-        },
-        {
-          "path": "frontend/src/components/AuthPromptBar.tsx",
-          "operation": "modify",
-          "description": "Fix the logic that determines when to display the 'Sign in was dismissed' message. Ensure the dismissed state is tied to the current prompt session and is cleared when the bar is shown again due to a new protected action. The bar should only show the dismissal message if the user explicitly clicked dismiss during the current visible session, not from a previous interaction."
+          "description": "Add click handler to the existing floating action button that checks authentication and profile status (reusing the same guard logic currently present in TaskCard.tsx's handleClick), then opens PostTaskModal if authorized or triggers showAuthPrompt otherwise. Ensure the FAB remains visible and functional across all filter/category states. The modal state and refresh logic already exist in the component; wire them to the FAB onClick event."
         }
       ]
     }
