@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "New project",
+  "architectural_notes": [],
+  "known_issues": [
+    "Sign-in prompt incorrectly shows 'dismissed' state unexpectedly"
+  ],
+  "isFixRequest": true,
+  "existing_features": [
+    {
+      "id": "feature-fix-the-authpromptbar-so-it-never-displays-a-sign-in-was-dismissed-message-unexpectedly-the-bar-should-only-show-a-dismissal-state-when-the-user-has-explicitly-closed-it-during-the-current-session-and-must-reset-correctly-when-a-new-protected-action-is-triggered",
+      "title": "Fix the AuthPromptBar so it never displays a 'Sign in was dismissed' message unexpectedly. The bar should only show a dismissal state when the user has explicitly closed it during the current session, and must reset correctly when a new protected action is triggered.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [],
+  "projectName": "Fix auth prompt bar showing incorrect 'dismissed' state",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

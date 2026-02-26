@@ -1,0 +1,38 @@
+{
+  "kind": "build_request",
+  "title": "Fix auth prompt bar showing incorrect 'dismissed' state",
+  "priority": "high",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Fix the AuthPromptBar so it never displays a 'Sign in was dismissed' message unexpectedly. The bar should only show a dismissal state when the user has explicitly closed it during the current session, and must reset correctly when a new protected action is triggered.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "why does it wright their sign in was dismised??"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Opening the app or performing a protected action does not show a 'dismissed' message unless the user actually dismissed the bar in the same session.",
+        "Triggering a new protected action after a previous dismissal re-shows the prompt bar in its default (non-dismissed) state.",
+        "The dismissed state is reset when the user navigates away or a new auth prompt is triggered.",
+        "No stale dismissed state persists across page reloads or new sessions."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not modify files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui."
+  ],
+  "nonGoals": [
+    "Redesigning the AuthPromptBar appearance or animation.",
+    "Changes to backend authentication logic.",
+    "Adding new authentication methods."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-25T18:03:22.324Z",
+  "summary": "The diff implements REQ-1 by refactoring App.tsx so that showAuthPrompt() always resets the dismissed state before showing the bar, and the dismissed state is only set when the user explicitly clicks dismiss. The auto-hide on authentication also resets both states. This covers all four acceptance criteria: no stale dismissed state, re-triggering resets dismissal, dismissed only set by explicit user action, and no persistence across sessions (state is in-memory React state).",
+  "missing_requirements": [],
+  "hallucinated_features": [],
+  "confidence": 0.95,
+  "changed_files": [
+    "frontend-file-summaries.txt",
+    "frontend/src/App.tsx",
+    "project_state.json"
+  ]
+}

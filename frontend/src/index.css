@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --radius: 1rem;
+        --background: 0.08 0 0;
+        --foreground: 0.98 0 0;
+        --card: 0.12 0 0;
+        --card-foreground: 0.98 0 0;
+        --popover: 0.12 0 0;
+        --popover-foreground: 0.98 0 0;
+        --primary: 0.75 0.22 45;
+        --primary-foreground: 0.08 0 0;
+        --secondary: 0.72 0.19 180;
+        --secondary-foreground: 0.98 0 0;
+        --accent: 0.78 0.20 85;
+        --accent-foreground: 0.08 0 0;
+        --muted: 0.25 0 0;
+        --muted-foreground: 0.65 0 0;
+        --destructive: 0.577 0.245 27.325;
+        --destructive-foreground: 0.98 0 0;
+        --border: 1 0 0 / 10%;
+        --input: 1 0 0 / 15%;
+        --ring: 0.75 0.22 45;
+        --chart-1: 0.75 0.22 45;
+        --chart-2: 0.72 0.19 180;
+        --chart-3: 0.78 0.20 85;
+        --chart-4: 0.70 0.18 160;
+        --chart-5: 0.76 0.21 65;
+    }
+
+    .dark {
+        --background: 0.08 0 0;
+        --foreground: 0.98 0 0;
+        --card: 0.12 0 0;
+        --card-foreground: 0.98 0 0;
+        --popover: 0.12 0 0;
+        --popover-foreground: 0.98 0 0;
+        --primary: 0.75 0.22 45;
+        --primary-foreground: 0.08 0 0;
+        --secondary: 0.72 0.19 180;
+        --secondary-foreground: 0.98 0 0;
+        --accent: 0.78 0.20 85;
+        --accent-foreground: 0.08 0 0;
+        --muted: 0.25 0 0;
+        --muted-foreground: 0.65 0 0;
+        --destructive: 0.577 0.245 27.325;
+        --destructive-foreground: 0.98 0 0;
+        --border: 1 0 0 / 10%;
+        --input: 1 0 0 / 15%;
+        --ring: 0.75 0.22 45;
+        --chart-1: 0.75 0.22 45;
+        --chart-2: 0.72 0.19 180;
+        --chart-3: 0.78 0.20 85;
+        --chart-4: 0.70 0.18 160;
+        --chart-5: 0.76 0.21 65;
+    }
+
+    * {
+        @apply border-border;
+    }
+    
+    body {
+        @apply bg-background text-foreground;
+        font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    }
+
+    /* Force dark mode */
+    html {
+        color-scheme: dark;
+    }
+
+    /* Smooth scrolling */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+        
+        * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}
+
+/* Smooth scrolling for category selector */
+.scroll-smooth {
+    scroll-behavior: smooth;
+}
+
+/* Auth prompt bar flicker animation */
+@keyframes auth-flicker {
+    0%, 100% { opacity: 1; }
+    20% { opacity: 0.3; }
+    40% { opacity: 1; }
+    60% { opacity: 0.5; }
+    80% { opacity: 1; }
+}
+
+.auth-flicker-dot {
+    animation: auth-flicker 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-flicker-dot {
+        animation: none;
+    }
+}
