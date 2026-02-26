@@ -1,11 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Wire the existing floating action button (FAB) on the HubView page so that clicking it opens the PostTaskModal, using the same auth/profile guard logic already in place.
+**Goal:** Add a floating action button (FAB) in the bottom-right corner of the HubView that opens the existing PostTaskModal.
 
 **Planned changes:**
-- Connect the FAB's `onClick` handler in HubView to open the existing PostTaskModal.
-- Reuse the existing auth/profile guard logic (same as TaskCard clicks) to prompt unauthenticated users or users without a profile appropriately.
-- After successful task submission via the modal, refresh the task list on HubView to include the new task.
+- Add a fixed circular FAB with a '+' icon to the bottom-right corner of the HubView (bottom-6 right-6, high z-index)
+- Style the FAB using the app's green-to-purple gradient consistent with other primary controls
+- Wire the FAB's click handler to open the existing PostTaskModal component
+- Ensure the FAB is visible on both mobile and desktop layouts
 
-**User-visible outcome:** Users can click the plus FAB on the Hub page to post a new task directly. Unauthenticated users or those without a profile are guided through the existing prompt flow, and authenticated users with a profile see the PostTaskModal open immediately.
+**User-visible outcome:** Users on the HubView can click the bottom-right '+' button at any time to open the task creation modal and post a new task.

@@ -1,14 +1,14 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App with a hub page that includes task posting functionality via a floating action button.",
+  "summary": "A task posting app where users can submit tasks via a bottom-right plus button.",
   "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-wire-the-floating-action-button-fab-in-the-bottom-right-corner-of-hubview-so-that-clicking-it-opens-the-posttaskmodal-for-authenticated-users-who-have-a-profile-if-the-user-is-not-authenticated-or-has-no-profile-trigger-the-existing-auth-profile-prompt-flow-matching-the-behaviour-already-used-by-taskcard-clicks",
-      "title": "Wire the floating action button (FAB) in the bottom-right corner of HubView so that clicking it opens the PostTaskModal for authenticated users who have a profile. If the user is not authenticated or has no profile, trigger the existing auth/profile prompt flow (matching the behaviour already used by TaskCard clicks).",
+      "id": "feature-add-a-fixed-floating-action-button-fab-in-the-bottom-right-corner-of-the-hubview-that-when-clicked-opens-the-existing-posttaskmodal-for-creating-a-new-task-the-button-should-display-a-icon-be-visually-prominent-using-the-app-s-green-to-purple-gradient-style-and-be-always-visible-while-the-user-is-on-the-hub-view",
+      "title": "Add a fixed floating action button (FAB) in the bottom-right corner of the HubView that, when clicked, opens the existing PostTaskModal for creating a new task. The button should display a '+' icon, be visually prominent using the app's green-to-purple gradient style, and be always visible while the user is on the hub view.",
       "reqIds": [
         "REQ-1"
       ],
@@ -18,7 +18,7 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Make the plus button (bottom-right FAB) on the hub page functional so users can post a task",
+      "summary": "Add a bottom-right plus button that lets users post/create a new task",
       "reqIds": [],
       "status": "pending"
     }

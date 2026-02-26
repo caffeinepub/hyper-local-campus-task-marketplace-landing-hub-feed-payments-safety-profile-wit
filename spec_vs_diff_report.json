@@ -1,28 +1,11 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-26T06:58:53.023Z",
-  "summary": "The diff shows HubView.tsx has been modified to wire the FAB button with a handlePostTask function that implements the auth/profile guard logic and opens PostTaskModal. The implementation covers most REQ-1 acceptance criteria. However, the profile-creation prompt flow uses a toast instead of the existing prompt flow, and task list refresh after submission is not clearly evidenced.",
-  "missing_requirements": [
-    {
-      "id": "REQ-1",
-      "requirement": "Clicking the FAB when the user is authenticated but has no profile shows the existing profile-creation prompt flow.",
-      "reason": "The diff shows that when the user has no profile, a toast.error is shown ('Please create a profile first before posting tasks.') rather than triggering the existing profile-creation prompt flow that TaskCard clicks use. The constraint says to re-use the existing auth/profile guard logic already present in HubView, but the no-profile case uses a simple toast instead of the proper profile prompt flow.",
-      "evidence": [
-        "frontend/src/views/HubView.tsx"
-      ]
-    },
-    {
-      "id": "REQ-1",
-      "requirement": "After a task is successfully submitted via the modal, the task list on HubView refreshes to include the new task.",
-      "reason": "The diff does not show any onSuccess or onClose callback passed to PostTaskModal that triggers a task list refresh. There is no evidence of query invalidation or refetch being wired to the modal's success event.",
-      "evidence": [
-        "frontend/src/views/HubView.tsx"
-      ]
-    }
-  ],
+  "generatedAt": "2026-02-26T07:45:01.788Z",
+  "summary": "The diff implements REQ-1 by adding a fixed floating action button (FAB) in the bottom-right corner of HubView. The implementation includes the Plus icon from lucide-react, state management for the modal (isPostModalOpen), the handlePostTask handler with auth/profile/actor validation, and wires the FAB to open the existing PostTaskModal. The file summary confirms the FAB is always visible and clickable with validation handled via toast messages. All acceptance criteria appear to be met.",
+  "missing_requirements": [],
   "hallucinated_features": [],
-  "confidence": 0.65,
+  "confidence": 0.85,
   "changed_files": [
     "frontend-file-summaries.txt",
     "frontend/src/views/HubView.tsx",

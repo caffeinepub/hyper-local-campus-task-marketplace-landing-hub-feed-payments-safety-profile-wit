@@ -26,8 +26,8 @@ export default function CategorySelector({ selectedCategory, onSelectCategory }:
           size="sm"
           onClick={() => onSelectCategory(null)}
           className={
-            selectedCategory === null 
-              ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-90 shadow-glow-coral font-semibold px-5 rounded-full transition-all' 
+            selectedCategory === null
+              ? 'bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] text-black hover:opacity-90 shadow-glow-green font-semibold px-5 rounded-full transition-all'
               : 'backdrop-blur-xl bg-background/50 border-border/60 hover:bg-muted/50 hover:border-primary/40 rounded-full transition-all'
           }
         >
@@ -40,8 +40,8 @@ export default function CategorySelector({ selectedCategory, onSelectCategory }:
             size="sm"
             onClick={() => onSelectCategory(category)}
             className={
-              selectedCategory === category 
-                ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-90 shadow-glow-coral font-semibold px-5 rounded-full transition-all whitespace-nowrap' 
+              selectedCategory === category
+                ? 'bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] text-black hover:opacity-90 shadow-glow-green font-semibold px-5 rounded-full transition-all whitespace-nowrap'
                 : 'backdrop-blur-xl bg-background/50 border-border/60 hover:bg-muted/50 hover:border-primary/40 rounded-full transition-all whitespace-nowrap'
             }
           >

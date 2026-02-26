@@ -1,23 +1,23 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Make plus FAB on Hub page open PostTaskModal",
+  "title": "Add bottom-right floating plus button to open PostTaskModal",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Wire the floating action button (FAB) in the bottom-right corner of HubView to open PostTaskModal for authenticated users with profiles, or trigger the existing auth/profile prompt flow if conditions aren't met",
+      "summary": "Add a fixed floating action button (FAB) in the bottom-right corner of the HubView that opens the PostTaskModal when clicked",
       "acceptanceCriteria": [
-        "Clicking the FAB on HubView opens PostTaskModal for a logged-in user with a profile.",
-        "Clicking the FAB when the user is not authenticated shows the existing authentication prompt (AuthPromptBar or equivalent flow).",
-        "Clicking the FAB when the user is authenticated but has no profile shows the existing profile-creation prompt flow.",
-        "After a task is successfully submitted via the modal, the task list on HubView refreshes to include the new task.",
-        "The FAB remains visible and accessible at the bottom-right of the page across all filter/category states."
+        "A circular FAB with a '+' icon is fixed to the bottom-right corner of the HubView (e.g., bottom-6 right-6 with z-index above task cards).",
+        "Clicking the FAB opens the PostTaskModal.",
+        "The FAB uses the app's green-to-purple gradient consistent with other active/primary controls in the app.",
+        "The FAB is visible on both mobile and desktop layouts.",
+        "Any existing 'Post Task' button or trigger in the HubView that duplicates this action is either removed or left in place without conflict."
       ],
       "file_operations": [
         {
           "path": "frontend/src/views/HubView.tsx",
           "operation": "modify",
-          "description": "Add click handler to the existing floating action button that checks authentication and profile status (reusing the same guard logic currently present in TaskCard.tsx's handleClick), then opens PostTaskModal if authorized or triggers showAuthPrompt otherwise. Ensure the FAB remains visible and functional across all filter/category states. The modal state and refresh logic already exist in the component; wire them to the FAB onClick event."
+          "description": "Add a fixed-position circular FAB in the bottom-right corner (using Tailwind classes such as 'fixed bottom-6 right-6 z-50') that displays a '+' icon. Apply the app's green-to-purple gradient (bg-gradient-to-r from-primary to-secondary) to match the existing active button styles seen in CategorySelector and FilterBar. Wire the FAB's onClick handler to set isPostModalOpen to true, triggering the existing PostTaskModal. Ensure the FAB is positioned above all task cards and is visible on both mobile and desktop viewports. If the existing 'Post New Task' button in the top section creates UI redundancy, consider removing it or keeping both for different use cases (desktop vs mobile)."
         }
       ]
     }

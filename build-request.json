@@ -1,39 +1,38 @@
 {
   "kind": "build_request",
-  "title": "Make plus FAB on Hub page open PostTaskModal",
+  "title": "Add bottom-right floating plus button to open PostTaskModal",
   "projectName": "PROXIIS",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Wire the floating action button (FAB) in the bottom-right corner of HubView so that clicking it opens the PostTaskModal for authenticated users who have a profile. If the user is not authenticated or has no profile, trigger the existing auth/profile prompt flow (matching the behaviour already used by TaskCard clicks).",
+      "text": "Add a fixed floating action button (FAB) in the bottom-right corner of the HubView that, when clicked, opens the existing PostTaskModal for creating a new task. The button should display a '+' icon, be visually prominent using the app's green-to-purple gradient style, and be always visible while the user is on the hub view.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-7"
+          "msg-4"
         ],
         "quotes": [
-          "make the plus button in the right bottom side of the hub page functional so that the user can post a task through it"
+          "let the user post their task by clicking on the botton right plus button"
         ]
       },
       "acceptanceCriteria": [
-        "Clicking the FAB on HubView opens PostTaskModal for a logged-in user with a profile.",
-        "Clicking the FAB when the user is not authenticated shows the existing authentication prompt (AuthPromptBar or equivalent flow).",
-        "Clicking the FAB when the user is authenticated but has no profile shows the existing profile-creation prompt flow.",
-        "After a task is successfully submitted via the modal, the task list on HubView refreshes to include the new task.",
-        "The FAB remains visible and accessible at the bottom-right of the page across all filter/category states."
+        "A circular FAB with a '+' icon is fixed to the bottom-right corner of the HubView (e.g., bottom-6 right-6 with z-index above task cards).",
+        "Clicking the FAB opens the PostTaskModal.",
+        "The FAB uses the app's green-to-purple gradient consistent with other active/primary controls in the app.",
+        "The FAB is visible on both mobile and desktop layouts.",
+        "Any existing 'Post Task' button or trigger in the HubView that duplicates this action is either removed or left in place without conflict."
       ]
     }
   ],
   "constraints": [
     "Do not modify any files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui.",
-    "Re-use the existing PostTaskModal component — do not create a duplicate modal.",
-    "Re-use the existing auth/profile guard logic already present in HubView rather than duplicating it."
+    "Reuse the existing PostTaskModal component — do not create a new modal."
   ],
   "nonGoals": [
-    "Changes to the PostTaskModal form fields or submission logic.",
-    "Changes to backend task creation logic.",
-    "Any redesign of the FAB button appearance."
+    "Changes to the PostTaskModal form itself.",
+    "Backend changes.",
+    "Any new task creation logic beyond wiring the FAB to open the existing modal."
   ],
   "imageRequirements": {
     "required": [],

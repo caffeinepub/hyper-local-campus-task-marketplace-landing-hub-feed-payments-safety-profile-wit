@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-wire-the-floating-action-button-fab-in-the-bottom-right-corner-of-hubview-so-that-clicking-it-opens-the-posttaskmodal-for-authenticated-users-who-have-a-profile-if-the-user-is-not-authenticated-or-has-no-profile-trigger-the-existing-auth-profile-prompt-flow-matching-the-behaviour-already-used-by-taskcard-clicks",
-      "featureTitle": "Wire the floating action button (FAB) in the bottom-right corner of HubView so that clicking it opens the PostTaskModal for authenticated users who have a profile. If the user is not authenticated or has no profile, trigger the existing auth/profile prompt flow (matching the behaviour already used by TaskCard clicks).",
+      "featureId": "feature-add-a-fixed-floating-action-button-fab-in-the-bottom-right-corner-of-the-hubview-that-when-clicked-opens-the-existing-posttaskmodal-for-creating-a-new-task-the-button-should-display-a-icon-be-visually-prominent-using-the-app-s-green-to-purple-gradient-style-and-be-always-visible-while-the-user-is-on-the-hub-view",
+      "featureTitle": "Add a fixed floating action button (FAB) in the bottom-right corner of the HubView that, when clicked, opens the existing PostTaskModal for creating a new task. The button should display a '+' icon, be visually prominent using the app's green-to-purple gradient style, and be always visible while the user is on the hub view.",
       "files": [
         "frontend/src/views/HubView.tsx"
       ],

@@ -5,57 +5,60 @@
 @layer base {
     :root {
         --radius: 1rem;
-        --background: 0.08 0 0;
-        --foreground: 0.98 0 0;
-        --card: 0.12 0 0;
-        --card-foreground: 0.98 0 0;
-        --popover: 0.12 0 0;
-        --popover-foreground: 0.98 0 0;
-        --primary: 0.75 0.22 45;
-        --primary-foreground: 0.08 0 0;
-        --secondary: 0.72 0.19 180;
-        --secondary-foreground: 0.98 0 0;
-        --accent: 0.78 0.20 85;
-        --accent-foreground: 0.08 0 0;
-        --muted: 0.25 0 0;
-        --muted-foreground: 0.65 0 0;
+        --background: 0.10 0 0;
+        --foreground: 0.985 0 0;
+        --card: 0.16 0.01 270;
+        --card-foreground: 0.985 0 0;
+        --popover: 0.16 0.01 270;
+        --popover-foreground: 0.985 0 0;
+        /* primary = landing page green: oklch(0.8 0.25 150) */
+        --primary: 0.80 0.25 150;
+        --primary-foreground: 0.10 0 0;
+        /* secondary = landing page purple: oklch(0.7 0.2 270) */
+        --secondary: 0.70 0.20 270;
+        --secondary-foreground: 0.985 0 0;
+        /* accent = mid-point teal-green: oklch(0.75 0.22 200) */
+        --accent: 0.75 0.22 200;
+        --accent-foreground: 0.10 0 0;
+        --muted: 0.22 0.02 270;
+        --muted-foreground: 0.65 0.02 270;
         --destructive: 0.577 0.245 27.325;
-        --destructive-foreground: 0.98 0 0;
+        --destructive-foreground: 0.985 0 0;
         --border: 1 0 0 / 10%;
         --input: 1 0 0 / 15%;
-        --ring: 0.75 0.22 45;
-        --chart-1: 0.75 0.22 45;
-        --chart-2: 0.72 0.19 180;
-        --chart-3: 0.78 0.20 85;
-        --chart-4: 0.70 0.18 160;
-        --chart-5: 0.76 0.21 65;
+        --ring: 0.80 0.25 150;
+        --chart-1: 0.80 0.25 150;
+        --chart-2: 0.70 0.20 270;
+        --chart-3: 0.75 0.22 200;
+        --chart-4: 0.72 0.18 180;
+        --chart-5: 0.76 0.21 120;
     }
 
     .dark {
-        --background: 0.08 0 0;
-        --foreground: 0.98 0 0;
-        --card: 0.12 0 0;
-        --card-foreground: 0.98 0 0;
-        --popover: 0.12 0 0;
-        --popover-foreground: 0.98 0 0;
-        --primary: 0.75 0.22 45;
-        --primary-foreground: 0.08 0 0;
-        --secondary: 0.72 0.19 180;
-        --secondary-foreground: 0.98 0 0;
-        --accent: 0.78 0.20 85;
-        --accent-foreground: 0.08 0 0;
-        --muted: 0.25 0 0;
-        --muted-foreground: 0.65 0 0;
+        --background: 0.10 0 0;
+        --foreground: 0.985 0 0;
+        --card: 0.16 0.01 270;
+        --card-foreground: 0.985 0 0;
+        --popover: 0.16 0.01 270;
+        --popover-foreground: 0.985 0 0;
+        --primary: 0.80 0.25 150;
+        --primary-foreground: 0.10 0 0;
+        --secondary: 0.70 0.20 270;
+        --secondary-foreground: 0.985 0 0;
+        --accent: 0.75 0.22 200;
+        --accent-foreground: 0.10 0 0;
+        --muted: 0.22 0.02 270;
+        --muted-foreground: 0.65 0.02 270;
         --destructive: 0.577 0.245 27.325;
-        --destructive-foreground: 0.98 0 0;
+        --destructive-foreground: 0.985 0 0;
         --border: 1 0 0 / 10%;
         --input: 1 0 0 / 15%;
-        --ring: 0.75 0.22 45;
-        --chart-1: 0.75 0.22 45;
-        --chart-2: 0.72 0.19 180;
-        --chart-3: 0.78 0.20 85;
-        --chart-4: 0.70 0.18 160;
-        --chart-5: 0.76 0.21 65;
+        --ring: 0.80 0.25 150;
+        --chart-1: 0.80 0.25 150;
+        --chart-2: 0.70 0.20 270;
+        --chart-3: 0.75 0.22 200;
+        --chart-4: 0.72 0.18 180;
+        --chart-5: 0.76 0.21 120;
     }
 
     * {
@@ -64,52 +67,16 @@
     
     body {
         @apply bg-background text-foreground;
-        font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
     }
 
     /* Force dark mode */
     html {
         color-scheme: dark;
     }
-
-    /* Smooth scrolling */
-    html {
-        scroll-behavior: smooth;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        html {
-            scroll-behavior: auto;
-        }
-        
-        * {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-        }
-    }
 }
 
 /* Smooth scrolling for category selector */
 .scroll-smooth {
     scroll-behavior: smooth;
-}
-
-/* Auth prompt bar flicker animation */
-@keyframes auth-flicker {
-    0%, 100% { opacity: 1; }
-    20% { opacity: 0.3; }
-    40% { opacity: 1; }
-    60% { opacity: 0.5; }
-    80% { opacity: 1; }
-}
-
-.auth-flicker-dot {
-    animation: auth-flicker 1.8s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .auth-flicker-dot {
-        animation: none;
-    }
 }
