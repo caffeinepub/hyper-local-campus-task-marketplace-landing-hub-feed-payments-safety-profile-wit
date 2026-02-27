@@ -1,17 +1,26 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
+import { useInternetIdentity } from './useInternetIdentity';
 import type { Task, TaskId } from '../backend';
 import { ExternalBlob } from '../backend';
 import { Principal } from '@dfinity/principal';
 
 export function useGetTasks() {
   const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  const isAuthenticated = !!identity;
 
   return useQuery<Task[]>({
-    queryKey: ['tasks'],
+    queryKey: ['tasks', isAuthenticated ? 'authenticated' : 'anonymous'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      return actor.getTasks();
+      if (isAuthenticated) {
+        // Authenticated users use getTasks() which returns all active tasks
+        return actor.getTasks();
+      } else {
+        // Anonymous users use searchTasks('') which is a public endpoint
+        return actor.searchTasks('');
+      }
     },
     enabled: !!actor && !actorFetching,
     retry: false,

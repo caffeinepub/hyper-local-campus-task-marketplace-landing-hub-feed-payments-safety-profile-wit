@@ -6,7 +6,7 @@ import Time "mo:core/Time";
 import Order "mo:core/Order";
 import Iter "mo:core/Iter";
 import Runtime "mo:core/Runtime";
-import Migration "migration";
+
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import MixinStorage "blob-storage/Mixin";
@@ -14,7 +14,7 @@ import Storage "blob-storage/Storage";
 import AccessControl "authorization/access-control";
 
 // Apply migration
-(with migration = Migration.run)
+
 actor {
   // Types
   type TaskId = Nat;
@@ -300,7 +300,9 @@ actor {
   };
 
   public query ({ caller }) func getTasks() : async [Task] {
-    // Public endpoint - no authorization required (guests can view tasks)
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only registered users can view tasks");
+    };
     tasks.values().toArray().filter(processFilteredTasks);
   };
 
@@ -486,3 +488,4 @@ actor {
     );
   };
 };
+

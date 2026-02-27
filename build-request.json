@@ -1,81 +1,34 @@
 {
   "kind": "build_request",
-  "title": "Profile icon account creation flow with user dashboard stats",
-  "projectName": "PROXIIS",
-  "priority": "normal",
+  "title": "Fix deployment error",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "When the user clicks the profile icon in HubTopBar, if the user does not have an existing profile, guide them through the account creation flow (Internet Identity authentication + Google Sign-In for Gmail linking + profile details form) before granting access to the profile view. Only after a profile is successfully created or confirmed to exist should the dashboard be displayed.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "When the user clicks on the profile icon, let them create their account first, then show those dashboards"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Clicking the profile icon when no profile exists initiates the account creation / onboarding flow",
-        "The user cannot access the dashboard until they have completed account creation",
-        "Clicking the profile icon when a profile already exists goes directly to the dashboard",
-        "The onboarding flow includes Internet Identity login, optional Google Sign-In for Gmail linking, and profile details entry",
-        "On successful profile creation, the user is transitioned to the dashboard view"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Add a user dashboard section within ProfileView that displays the following stat cards for the authenticated user: (1) Tasks Completed — total number of tasks the user has completed as a performer, (2) User Rating — the user's average star rating received from task creators, (3) Total Ratings — the total number of rating reviews the user has received, and (4) Tasks Posted — total number of tasks the user has created. Fetch this data from the user's backend Profile record.",
+      "id": "REQ-7",
+      "text": "Diagnose and fix the build/deployment error that occurred in the last deployment attempt. Review all backend Motoko code in backend/main.mo and all frontend TypeScript/React files for compilation errors, type mismatches, missing imports, or any other issues that would cause a build failure, and correct them.",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "show those dashboards of task completed, user ratings, total ratings, and all those"
+          "fi that error"
         ]
       },
       "acceptanceCriteria": [
-        "The dashboard displays a 'Tasks Completed' stat card with the correct count",
-        "The dashboard displays a 'User Rating' stat card showing the average star rating (e.g., 4.5 ★)",
-        "The dashboard displays a 'Total Ratings' stat card with the total number of ratings received",
-        "The dashboard displays a 'Tasks Posted' stat card with the correct count",
-        "All stats are loaded from the backend Profile data for the authenticated user",
-        "A loading skeleton is shown while data is being fetched",
-        "Stat cards use the existing PROXIIS neon/dark visual theme with the green-to-purple gradient accents"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Ensure the backend Profile type and related query endpoints expose all necessary fields for the dashboard stats: tasksCompleted count, averageRating, totalRatingsCount, and tasksPosted count. Add or update these fields in the Motoko actor if they are not already present or not returned by the existing getProfile/getCallerProfile endpoints.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "task completed, user ratings, total ratings"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The Profile type includes tasksCompleted, averageRating, totalRatingsReceived, and tasksPosted fields",
-        "The getCallerProfile (or equivalent) endpoint returns these fields populated with correct values",
-        "Existing profile creation and update logic initializes these fields to zero/empty defaults",
-        "Rating and completion counts are updated correctly by existing task completion and verification mutations"
+        "The application builds without errors",
+        "The application deploys successfully",
+        "All existing features continue to work as before"
       ]
     }
   ],
   "constraints": [
-    "Do not modify any files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui",
-    "All Motoko logic must remain in the single main actor file (backend/main.mo)",
-    "Preserve the existing PROXIIS neon grid / dark theme visual identity"
+    "Do not remove or alter any existing features or functionality",
+    "Do not modify files listed in frontend.immutablePaths"
   ],
   "nonGoals": [
-    "Redesigning the landing page or hub view",
-    "Adding new task categories or task management features",
-    "Leaderboard changes",
-    "Payment or QR code flow changes"
+    "Adding new features",
+    "Changing application design or layout"
   ],
   "imageRequirements": {
     "required": [],

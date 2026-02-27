@@ -1,58 +1,166 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Profile icon account creation flow with user dashboard stats",
+  "title": "Fix Deployment Error",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Guide users through account creation flow when clicking the profile icon if no profile exists, then display dashboard after successful profile creation",
+      "id": "REQ-7",
+      "summary": "Diagnose and fix build/deployment errors in frontend TypeScript/React files",
       "acceptanceCriteria": [
-        "Clicking the profile icon when no profile exists initiates the account creation / onboarding flow",
-        "The user cannot access the dashboard until they have completed account creation",
-        "Clicking the profile icon when a profile already exists goes directly to the dashboard",
-        "The onboarding flow includes Internet Identity login, optional Google Sign-In for Gmail linking, and profile details entry",
-        "On successful profile creation, the user is transitioned to the dashboard view"
+        "The application builds without errors",
+        "The application deploys successfully",
+        "All existing features continue to work as before"
       ],
       "file_operations": [
         {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or React-related issues in the root App component that manages view state transitions"
+        },
+        {
+          "path": "frontend/src/views/HubView.tsx",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or React hook usage issues in the HubView component that displays filterable task listings"
+        },
+        {
           "path": "frontend/src/views/ProfileView.tsx",
           "operation": "modify",
-          "description": "Refactor ProfileView to implement a multi-step onboarding flow when no profile exists: (1) ensure Internet Identity authentication, (2) present optional Google Sign-In for Gmail linking, (3) display profile details form (name entry), (4) on successful profile save, transition to the dashboard section. When a profile already exists, skip directly to the dashboard. Use the authorization component's getCallerUserProfile to check profile existence and saveCallerUserProfile/createUserProfileWithGoogle for profile creation. Verify the component's usage instructions before implementing."
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or React hook usage issues in the ProfileView component that manages the multi-step profile flow"
+        },
+        {
+          "path": "frontend/src/views/LandingView.tsx",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or React-related issues in the LandingView component"
+        },
+        {
+          "path": "frontend/src/hooks/useActor.ts",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, or React Query hook implementation issues in the actor hook that manages backend authentication"
+        },
+        {
+          "path": "frontend/src/hooks/useInternetIdentity.ts",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, or React context/hook implementation issues in the Internet Identity authentication hook"
+        },
+        {
+          "path": "frontend/src/hooks/useGoogleAuth.ts",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, or external SDK integration issues in the Google authentication hook"
+        },
+        {
+          "path": "frontend/src/hooks/useProfile.ts",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, or React Query mutation/query implementation issues in the profile data hooks"
+        },
+        {
+          "path": "frontend/src/hooks/useTasks.ts",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, or React Query implementation issues in the task data fetching hooks"
+        },
+        {
+          "path": "frontend/src/hooks/useTaskActions.ts",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, or React Query mutation implementation issues in the task action hooks"
+        },
+        {
+          "path": "frontend/src/hooks/useLeaderboard.ts",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, or React Query implementation issues in the leaderboard data hook"
         },
         {
           "path": "frontend/src/components/HubTopBar.tsx",
           "operation": "modify",
-          "description": "Update the profile button click handler in HubTopBar to set the view state to 'profile' without any additional guards. The ProfileView will handle the onboarding flow internally based on profile existence. Ensure the profile icon remains accessible to all authenticated users."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Add user dashboard section within ProfileView displaying stat cards for Tasks Completed, User Rating, Total Ratings, and Tasks Posted, fetched from the user's backend Profile record",
-      "acceptanceCriteria": [
-        "The dashboard displays a 'Tasks Completed' stat card with the correct count",
-        "The dashboard displays a 'User Rating' stat card showing the average star rating (e.g., 4.5 ★)",
-        "The dashboard displays a 'Total Ratings' stat card with the total number of ratings received",
-        "The dashboard displays a 'Tasks Posted' stat card with the correct count",
-        "All stats are loaded from the backend Profile data for the authenticated user",
-        "A loading skeleton is shown while data is being fetched",
-        "Stat cards use the existing PROXIIS neon/dark visual theme with the green-to-purple gradient accents"
-      ],
-      "file_operations": [
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or React component issues in the HubTopBar navigation component"
+        },
         {
-          "path": "frontend/src/hooks/useProfile.ts",
+          "path": "frontend/src/components/TaskCard.tsx",
           "operation": "modify",
-          "description": "Add a new React Query hook useGetCallerProfileStats that fetches the caller's Profile (containing tasksCompleted, averageRating, totalRatingsCount, and tasksPosted fields) from the backend via the getCallerProfile backend capability. Return the fetched Profile data along with loading and error states. Use the authorization component's data access patterns. Verify the component's usage instructions before implementing."
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or React component issues in the TaskCard display component"
+        },
+        {
+          "path": "frontend/src/components/TaskDetailsSheet.tsx",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or React component issues in the TaskDetailsSheet slide-in component"
+        },
+        {
+          "path": "frontend/src/components/PostTaskModal.tsx",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or form handling issues in the PostTaskModal component"
+        },
+        {
+          "path": "frontend/src/components/CompleteTaskModal.tsx",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or form handling issues in the CompleteTaskModal component"
+        },
+        {
+          "path": "frontend/src/components/AuthPromptDialog.tsx",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or React component issues in the AuthPromptDialog modal component"
+        },
+        {
+          "path": "frontend/src/components/CreateProfilePromptDialog.tsx",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or React component issues in the CreateProfilePromptDialog component"
         },
         {
           "path": "frontend/src/components/DashboardStatsPanel.tsx",
-          "operation": "create",
-          "description": "Create a new DashboardStatsPanel component that uses the useGetCallerProfileStats hook to fetch and display four stat cards: 'Tasks Completed' (tasksCompleted count), 'User Rating' (averageRating formatted as stars, e.g., '4.5 ★'), 'Total Ratings' (totalRatingsCount), and 'Tasks Posted' (tasksPosted count). Show loading skeletons while data is being fetched. Style the stat cards with the PROXIIS neon/dark theme using the green-to-purple gradient accents for highlights and borders. Use existing Tailwind utilities and design tokens from frontend/tailwind.config.js and frontend/src/index.css."
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or data display issues in the DashboardStatsPanel component"
         },
         {
-          "path": "frontend/src/views/ProfileView.tsx",
+          "path": "frontend/src/components/LeaderboardPanel.tsx",
           "operation": "modify",
-          "description": "After the onboarding flow is complete and a profile exists, render the DashboardStatsPanel component within the ProfileView dashboard section. Position it above the existing task post history and rating sections. Ensure the dashboard only displays when the user has a valid profile and is authenticated."
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or data display issues in the LeaderboardPanel component"
+        },
+        {
+          "path": "frontend/src/components/CategorySelector.tsx",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or React component issues in the CategorySelector filter component"
+        },
+        {
+          "path": "frontend/src/components/FilterBar.tsx",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or React component issues in the FilterBar toggle component"
+        },
+        {
+          "path": "frontend/src/components/QRCodeDisplay.tsx",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, external library integration issues, or rendering issues in the QRCodeDisplay component"
+        },
+        {
+          "path": "frontend/src/components/StarRating.tsx",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or React component issues in the StarRating display component"
+        },
+        {
+          "path": "frontend/src/components/WeeklyProgressReel.tsx",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, animation implementation issues, or React component issues in the WeeklyProgressReel component"
+        },
+        {
+          "path": "frontend/src/utils/deepLinks.ts",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, or utility function implementation issues in the deep links utility module"
+        },
+        {
+          "path": "frontend/src/utils/time.ts",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, or utility function implementation issues in the time conversion utility module"
+        },
+        {
+          "path": "frontend/src/utils/urlParams.ts",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, or utility function implementation issues in the URL parameters utility module"
+        },
+        {
+          "path": "frontend/src/main.tsx",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors, type mismatches, missing imports, or React app mounting issues in the application entry point"
+        },
+        {
+          "path": "frontend/src/config/constants.ts",
+          "operation": "modify",
+          "description": "Review and fix any TypeScript compilation errors or type export issues in the constants configuration module"
         }
       ]
     }

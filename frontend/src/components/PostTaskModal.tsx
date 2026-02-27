@@ -190,7 +190,7 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="e.g., Deliver groceries to my home"
+              placeholder="e.g., Make database notes on behalf of me"
               required
             />
           </div>
@@ -234,7 +234,7 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="e.g., Koramangala, Bangalore"
+              placeholder="e.g., ABC university"
               required
             />
           </div>
@@ -246,7 +246,7 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
               value={formData.safeSpot}
               onChange={(e) => setFormData({ ...formData, safeSpot: e.target.value })}
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="e.g., Near Cafe Coffee Day"
+              placeholder="e.g., Near A1 building"
               required
             />
           </div>

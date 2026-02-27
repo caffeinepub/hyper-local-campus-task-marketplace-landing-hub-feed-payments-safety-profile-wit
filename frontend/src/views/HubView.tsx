@@ -4,12 +4,13 @@ import HubTopBar from '../components/HubTopBar';
 import CategorySelector from '../components/CategorySelector';
 import TaskCard from '../components/TaskCard';
 import PostTaskModal from '../components/PostTaskModal';
+import AuthPromptDialog from '../components/AuthPromptDialog';
 import FilterBar, { type FilterType } from '../components/FilterBar';
 import { useGetTasks } from '../hooks/useTasks';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useActor } from '../hooks/useActor';
 import { useGetCallerUserProfile } from '../hooks/useProfile';
-import { Plus, FolderOpen } from 'lucide-react';
+import { Plus, FolderOpen, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { View } from '../App';
 
@@ -21,15 +22,17 @@ export default function HubView({ onNavigate }: HubViewProps) {
   const { identity } = useInternetIdentity();
   const { actor, isFetching: actorLoading } = useActor();
   const { data: tasks = [], isLoading: tasksLoading } = useGetTasks();
-  const { data: userProfile, isLoading: profileLoading } = useGetCallerUserProfile();
+  const { data: userProfile, isLoading: profileLoading, isFetched: profileFetched } = useGetCallerUserProfile();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [isAuthPromptOpen, setIsAuthPromptOpen] = useState(false);
+  const [authPromptReason, setAuthPromptReason] = useState<'view-task' | 'post-task'>('post-task');
   const [sortFilter, setSortFilter] = useState<FilterType>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const isAuthenticated = !!identity;
   const isActorReady = !!actor && !actorLoading;
-  const hasProfile = userProfile !== null && userProfile !== undefined;
+  const hasProfile = isAuthenticated && profileFetched && userProfile !== null && userProfile !== undefined;
 
   const filteredAndSortedTasks = useMemo(() => {
     let filtered = tasks.filter(task => {
@@ -64,26 +67,33 @@ export default function HubView({ onNavigate }: HubViewProps) {
 
   const handlePostTask = () => {
     if (!isAuthenticated) {
-      toast.error('Please log in to post a task');
+      setAuthPromptReason('post-task');
+      setIsAuthPromptOpen(true);
       return;
     }
     if (!isActorReady) {
-      toast.error('Make an account first to post the task in proxies.');
+      toast.error('Connection not ready. Please wait a moment.');
       return;
     }
     if (!hasProfile) {
-      // Navigate to profile page to create a PROXIIS account
+      toast.info('Please create your PROXIIS profile first');
       onNavigate('profile');
       return;
     }
     setIsPostModalOpen(true);
   };
 
+  const handlePostTaskAfterLogin = () => {
+    if (!hasProfile) {
+      onNavigate('profile');
+    } else {
+      setIsPostModalOpen(true);
+    }
+  };
+
   const handleNavigateToProfile = () => {
     onNavigate('profile');
   };
-
-  const isLoading = tasksLoading || actorLoading || profileLoading;
 
   const renderEmptyState = () => {
     if (selectedCategory) {
@@ -129,6 +139,42 @@ export default function HubView({ onNavigate }: HubViewProps) {
     );
   };
 
+  const renderFeed = () => {
+    if (actorLoading) {
+      return (
+        <div className="col-span-full flex flex-col items-center justify-center py-24 gap-4">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[oklch(0.8_0.25_150)] border-t-transparent" />
+          <p className="text-muted-foreground">Connecting...</p>
+        </div>
+      );
+    }
+
+    if (tasksLoading) {
+      return (
+        <div className="col-span-full text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[oklch(0.8_0.25_150)] border-t-transparent" />
+          <p className="mt-4 text-muted-foreground">Loading tasks...</p>
+        </div>
+      );
+    }
+
+    if (filteredAndSortedTasks.length === 0) {
+      return renderEmptyState();
+    }
+
+    return (
+      <>
+        {filteredAndSortedTasks.map((task) => (
+          <TaskCard
+            key={task.id.toString()}
+            task={task}
+            isAuthenticated={isAuthenticated}
+          />
+        ))}
+      </>
+    );
+  };
+
   return (
     <div className="min-h-screen flex flex-col pb-20">
       <HubTopBar
@@ -149,25 +195,34 @@ export default function HubView({ onNavigate }: HubViewProps) {
         />
       </div>
 
+      {/* Guest banner — subtle, non-blocking */}
+      {!isAuthenticated && !actorLoading && (
+        <div className="max-w-5xl mx-auto w-full px-5 pt-5">
+          <div className="flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-[oklch(0.8_0.25_150)]/10 to-[oklch(0.7_0.2_270)]/10 border border-[oklch(0.8_0.25_150)]/20 px-4 py-3">
+            <p className="text-sm text-muted-foreground">
+              👋 <span className="font-medium text-foreground">Browsing as guest.</span> Login to post tasks or view full details.
+            </p>
+            <Button
+              size="sm"
+              onClick={() => {
+                setAuthPromptReason('view-task');
+                setIsAuthPromptOpen(true);
+              }}
+              className="bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] hover:opacity-90 text-black font-semibold rounded-full text-xs px-4 flex-shrink-0"
+            >
+              Login
+            </Button>
+          </div>
+        </div>
+      )}
+
       <main className="flex-1 max-w-5xl mx-auto w-full px-5 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {isLoading ? (
-            <div className="col-span-full text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[oklch(0.8_0.25_150)] border-t-transparent"></div>
-              <p className="mt-4 text-muted-foreground">
-                {actorLoading ? 'Connecting...' : profileLoading ? 'Loading profile...' : 'Loading tasks...'}
-              </p>
-            </div>
-          ) : filteredAndSortedTasks.length === 0 ? (
-            renderEmptyState()
-          ) : (
-            filteredAndSortedTasks.map((task) => (
-              <TaskCard key={task.id.toString()} task={task} />
-            ))
-          )}
+          {renderFeed()}
         </div>
       </main>
 
+      {/* Post Task FAB */}
       <Button
         onClick={handlePostTask}
         className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-2xl bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] hover:opacity-90 text-black z-40"
@@ -179,6 +234,14 @@ export default function HubView({ onNavigate }: HubViewProps) {
       <PostTaskModal
         isOpen={isPostModalOpen}
         onClose={() => setIsPostModalOpen(false)}
+      />
+
+      {/* Auth prompt dialog */}
+      <AuthPromptDialog
+        open={isAuthPromptOpen}
+        onOpenChange={setIsAuthPromptOpen}
+        reason={authPromptReason}
+        onLoginSuccess={authPromptReason === 'post-task' ? handlePostTaskAfterLogin : undefined}
       />
     </div>
   );

@@ -2,31 +2,31 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import TaskDetailsSheet from './TaskDetailsSheet';
+import AuthPromptDialog from './AuthPromptDialog';
 import { formatDeadline } from '@/utils/time';
-import { useGetCallerUserProfile } from '@/hooks/useProfile';
-import { useInternetIdentity } from '@/hooks/useInternetIdentity';
-import { toast } from 'sonner';
 import type { Task } from '@/backend';
 import { MapPin, IndianRupee, Clock } from 'lucide-react';
 
 interface TaskCardProps {
   task: Task;
+  isAuthenticated?: boolean;
 }
 
-export default function TaskCard({ task }: TaskCardProps) {
+export default function TaskCard({ task, isAuthenticated = false }: TaskCardProps) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const { identity } = useInternetIdentity();
-  const { data: userProfile, isFetched: profileFetched } = useGetCallerUserProfile();
+  const [isAuthPromptOpen, setIsAuthPromptOpen] = useState(false);
   const formattedDeadline = formatDeadline(task.deadline);
 
-  const isAuthenticated = !!identity;
-  const hasProfile = userProfile !== null;
-
   const handleCardClick = () => {
-    if (isAuthenticated && profileFetched && !hasProfile) {
-      toast.error('Please create an account first on proxy to view task details');
+    if (!isAuthenticated) {
+      setIsAuthPromptOpen(true);
       return;
     }
+    setIsDetailsOpen(true);
+  };
+
+  const handleLoginSuccess = () => {
+    // After login, open the details sheet
     setIsDetailsOpen(true);
   };
 
@@ -50,6 +50,15 @@ export default function TaskCard({ task }: TaskCardProps) {
             <Badge className="absolute top-4 right-4 bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] text-black border-none backdrop-blur-sm shadow-lg font-semibold px-3 py-1">
               {task.category}
             </Badge>
+
+            {/* Lock overlay hint for unauthenticated users */}
+            {!isAuthenticated && (
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+                <span className="text-white text-xs font-semibold bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
+                  Login to view details
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Task Info */}
@@ -82,10 +91,21 @@ export default function TaskCard({ task }: TaskCardProps) {
         </CardContent>
       </Card>
 
-      <TaskDetailsSheet
-        task={task}
-        open={isDetailsOpen}
-        onOpenChange={setIsDetailsOpen}
+      {/* Task details — only rendered for authenticated users */}
+      {isAuthenticated && (
+        <TaskDetailsSheet
+          task={task}
+          open={isDetailsOpen}
+          onOpenChange={setIsDetailsOpen}
+        />
+      )}
+
+      {/* Auth prompt for unauthenticated users */}
+      <AuthPromptDialog
+        open={isAuthPromptOpen}
+        onOpenChange={setIsAuthPromptOpen}
+        reason="view-task"
+        onLoginSuccess={handleLoginSuccess}
       />
     </>
   );

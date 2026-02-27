@@ -1,24 +1,40 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 3,
-  "summary": "App with profile/account creation flow and user dashboard showing task completed, user ratings, total ratings, and related stats.",
+  "projectStateVersion": 11,
+  "summary": "New project",
   "architectural_notes": [],
   "known_issues": [],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-when-the-user-clicks-the-profile-icon-in-hubtopbar-if-the-user-does-not-have-an-existing-profile-guide-them-through-the-account-creation-flow-internet-identity-authentication-google-sign-in-for-gmail-linking-profile-details-form-before-granting-access-to-the-profile-view-only-after-a-profile-is-successfully-created-or-confirmed-to-exist-should-the-dashboard-be-displayed",
-      "title": "When the user clicks the profile icon in HubTopBar, if the user does not have an existing profile, guide them through the account creation flow (Internet Identity authentication + Google Sign-In for Gmail linking + profile details form) before granting access to the profile view. Only after a profile is successfully created or confirmed to exist should the dashboard be displayed.",
+      "id": "feature-change-the-default-view-in-app-tsx-from-hub-to-landing-so-that-when-a-user-first-opens-the-app-they-land-on-the-landingview-after-the-user-authenticates-or-chooses-to-proceed-they-should-be-navigated-to-the-hubview-as-currently-implemented-all-other-view-transitions-and-functionality-must-remain-unchanged",
+      "title": "Change the default view in App.tsx from 'hub' to 'landing', so that when a user first opens the app they land on the LandingView. After the user authenticates or chooses to proceed, they should be navigated to the HubView as currently implemented. All other view transitions and functionality must remain unchanged.",
       "reqIds": [
-        "REQ-1"
+        "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-user-dashboard-section-within-profileview-that-displays-the-following-stat-cards-for-the-authenticated-user-1-tasks-completed-total-number-of-tasks-the-user-has-completed-as-a-performer-2-user-rating-the-user-s-average-star-rating-received-from-task-creators-3-total-ratings-the-total-number-of-rating-reviews-the-user-has-received-and-4-tasks-posted-total-number-of-tasks-the-user-has-created-fetch-this-data-from-the-user-s-backend-profile-record",
-      "title": "Add a user dashboard section within ProfileView that displays the following stat cards for the authenticated user: (1) Tasks Completed — total number of tasks the user has completed as a performer, (2) User Rating — the user's average star rating received from task creators, (3) Total Ratings — the total number of rating reviews the user has received, and (4) Tasks Posted — total number of tasks the user has created. Fetch this data from the user's backend Profile record.",
+      "id": "feature-in-hubtopbar-wire-the-profile-icon-button-so-that-clicking-it-calls-a-navigation-callback-that-sets-the-top-level-view-to-profile-in-app-tsx-rendering-the-profileview-when-the-user-closes-or-exits-the-profileview-they-should-be-returned-to-the-hubview",
+      "title": "In HubTopBar, wire the profile icon button so that clicking it calls a navigation callback that sets the top-level view to 'profile' in App.tsx, rendering the ProfileView. When the user closes or exits the ProfileView, they should be returned to the HubView.",
       "reqIds": [
-        "REQ-2"
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-profileview-to-include-a-user-settings-form-with-input-fields-for-full-name-and-telegram-handle-e-g-username-the-form-must-allow-the-user-to-save-update-these-values-the-form-should-be-visible-both-during-initial-profile-creation-and-when-revisiting-the-profile-page-on-submit-call-the-backend-to-persist-the-data-and-show-a-success-notification",
+      "title": "Update ProfileView to include a 'User Settings' form with input fields for Full Name and Telegram Handle (e.g., @username). The form must allow the user to save/update these values. The form should be visible both during initial profile creation and when revisiting the profile page. On submit, call the backend to persist the data and show a success notification.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-useprofile-hook-and-any-related-hooks-in-frontend-src-hooks-useprofile-ts-to-support-reading-and-writing-the-new-fullname-and-telegramhandle-fields-when-calling-backend-profile-create-update-mutations",
+      "title": "Update the useProfile hook (and any related hooks in frontend/src/hooks/useProfile.ts) to support reading and writing the new fullName and telegramHandle fields when calling backend profile create/update mutations.",
+      "reqIds": [
+        "REQ-6"
       ],
       "version": 1
     }
@@ -26,27 +42,48 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Profile icon click triggers account creation flow before showing user dashboard",
-      "reqIds": [],
+      "summary": "In the title/hero section of the landing page, replace the existing subtitle or descriptive text 'Deliver groceries to my home' with 'Make database notes on behalf of me'.",
+      "reqIds": [
+        "REQ-1"
+      ],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "User dashboard showing tasks completed, user ratings, total ratings, and related stats",
+      "summary": "Ensure the user lands on the landing page first, then navigates to the hub page. Keep all other functionality the same.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Allow the user to navigate to their profile when they click on the profile icon.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Update the Profile Page to include a 'User Settings' form with input fields for Full Name and Telegram Handle (e.g., @username). When the user clicks the profile icon, allow them to enter their name and email to create a profile, and include these fields when they create their account.",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-5",
-      "summary": "Ensure the backend Profile type and related query endpoints expose all necessary fields for the dashboard stats: tasksCompleted count, averageRating, totalRatingsCount, and tasksPosted count. Add or update these fields in the Motoko actor if they are not already present or not returned by the existing getProfile/getCallerProfile endpoints.",
+      "summary": "Update the backend user profile data model to include 'fullName' (Text) and 'telegramHandle' (Text) fields in addition to any existing profile fields. Expose backend endpoints to create and update a user profile with these fields.",
       "reqIds": [
-        "REQ-3"
+        "REQ-4"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Diagnose and fix the build/deployment error that occurred in the last deployment attempt. Review all backend Motoko code in backend/main.mo and all frontend TypeScript/React files for compilation errors, type mismatches, missing imports, or any other issues that would cause a build failure, and correct them.",
+      "reqIds": [
+        "REQ-7"
       ],
       "status": "pending"
     }
   ],
-  "gameProjectType": "none",
-  "projectName": "PROXIIS",
+  "projectName": "Update hero title text in landing page",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
