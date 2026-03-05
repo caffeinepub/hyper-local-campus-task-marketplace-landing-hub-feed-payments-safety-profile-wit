@@ -35,9 +35,12 @@ export interface Task {
 }
 export interface Profile {
     ratingSum: bigint;
+    totalRatingsCount: bigint;
     ratingCount: bigint;
     tasksCompleted: bigint;
+    averageRating: bigint;
     earnings: bigint;
+    tasksPosted: bigint;
 }
 export interface UserProfile {
     gmailAddress?: string;
@@ -63,6 +66,7 @@ export interface backendInterface {
     createTask(title: string, category: string, price: bigint, location: string, safeSpot: string, telegramHandle: string, photo: ExternalBlob, deadline: Time | null): Promise<TaskId>;
     createUserProfileWithGoogle(name: string, gmailAddress: string): Promise<void>;
     deleteTask(taskId: TaskId): Promise<void>;
+    getCallerProfile(): Promise<Profile>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getCommentsForTask(_taskId: bigint): Promise<Array<[string, string, string]>>;

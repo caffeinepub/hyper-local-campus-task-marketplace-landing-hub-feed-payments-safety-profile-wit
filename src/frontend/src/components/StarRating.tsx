@@ -1,4 +1,4 @@
-import { Star } from 'lucide-react';
+import { Star } from "lucide-react";
 
 interface StarRatingProps {
   rating: number;
@@ -17,13 +17,14 @@ export default function StarRating({ rating, maxStars = 5 }: StarRatingProps) {
 
         return (
           <Star
-            key={index}
+            // biome-ignore lint/suspicious/noArrayIndexKey: star position is the stable key
+            key={`star-${index}`}
             className={`w-5 h-5 ${
               isFilled
-                ? 'fill-[oklch(0.8_0.25_150)] text-[oklch(0.8_0.25_150)]'
+                ? "fill-[oklch(0.8_0.25_150)] text-[oklch(0.8_0.25_150)]"
                 : isHalf
-                ? 'fill-[oklch(0.8_0.25_150)]/50 text-[oklch(0.8_0.25_150)]'
-                : 'text-muted-foreground'
+                  ? "fill-[oklch(0.8_0.25_150)]/50 text-[oklch(0.8_0.25_150)]"
+                  : "text-muted-foreground"
             }`}
           />
         );

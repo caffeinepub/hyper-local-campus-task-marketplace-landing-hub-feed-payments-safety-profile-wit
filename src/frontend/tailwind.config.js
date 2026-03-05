@@ -77,9 +77,12 @@ export default {
             boxShadow: {
                 xs: '0 1px 2px 0 rgba(0,0,0,0.05)',
                 glow: '0 0 20px rgba(0,0,0,0.3)',
-                'glow-coral': '0 4px 24px -2px oklch(0.75 0.22 45 / 0.4)',
-                'glow-teal': '0 4px 24px -2px oklch(0.72 0.19 180 / 0.4)',
-                'glow-amber': '0 4px 24px -2px oklch(0.78 0.20 85 / 0.4)'
+                'glow-green': '0 4px 24px -2px oklch(0.80 0.25 150 / 0.45)',
+                'glow-purple': '0 4px 24px -2px oklch(0.70 0.20 270 / 0.45)',
+                'glow-teal': '0 4px 24px -2px oklch(0.75 0.22 200 / 0.40)',
+                /* keep old names as aliases so existing usages don't break */
+                'glow-coral': '0 4px 24px -2px oklch(0.80 0.25 150 / 0.45)',
+                'glow-amber': '0 4px 24px -2px oklch(0.75 0.22 200 / 0.40)'
             },
             keyframes: {
                 'accordion-down': {

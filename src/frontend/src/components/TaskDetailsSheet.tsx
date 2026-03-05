@@ -1,9 +1,4 @@
-import { useState } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import type { Task } from "@/backend";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,24 +8,53 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import CompleteTaskModal from './CompleteTaskModal';
-import QRCodeDisplay from './QRCodeDisplay';
-import { useInternetIdentity } from '@/hooks/useInternetIdentity';
-import { useAssignPerformer, useToggleTelegramDiscussion, useDeleteTask } from '@/hooks/useTaskActions';
-import { buildTelegramLink, buildUPILink } from '@/utils/deepLinks';
-import { formatDeadline } from '@/utils/time';
-import type { Task } from '@/backend';
-import { MapPin, IndianRupee, MessageCircle, CreditCard, MapPinned, CheckCircle, Clock, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Switch } from "@/components/ui/switch";
+import { useInternetIdentity } from "@/hooks/useInternetIdentity";
+import {
+  useAssignPerformer,
+  useDeleteTask,
+  useToggleTelegramDiscussion,
+} from "@/hooks/useTaskActions";
+import { buildUPILink } from "@/utils/deepLinks";
+import { formatDeadline } from "@/utils/time";
+import {
+  CheckCircle,
+  Clock,
+  CreditCard,
+  IndianRupee,
+  MapPin,
+  MapPinned,
+  MessageSquare,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import CompleteTaskModal from "./CompleteTaskModal";
+import QRCodeDisplay from "./QRCodeDisplay";
 
 interface TaskDetailsSheetProps {
   task: Task;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onOpenChat?: (taskId: bigint, taskTitle: string, creatorId: string) => void;
 }
 
-export default function TaskDetailsSheet({ task, open, onOpenChange }: TaskDetailsSheetProps) {
+export default function TaskDetailsSheet({
+  task,
+  open,
+  onOpenChange,
+  onOpenChat,
+}: TaskDetailsSheetProps) {
   const { identity } = useInternetIdentity();
   const assignMutation = useAssignPerformer();
   const toggleTelegramMutation = useToggleTelegramDiscussion();
@@ -38,61 +62,68 @@ export default function TaskDetailsSheet({ task, open, onOpenChange }: TaskDetai
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const isCreator = identity?.getPrincipal().toString() === task.creator.toString();
-  const isPerformer = task.performer && identity?.getPrincipal().toString() === task.performer.toString();
+  const isCreator =
+    identity?.getPrincipal().toString() === task.creator.toString();
+  const isPerformer =
+    task.performer &&
+    identity?.getPrincipal().toString() === task.performer.toString();
   const canAccept = !task.performer && !isCreator && !!identity;
   const canComplete = isPerformer && !task.isVerified;
 
   const formattedDeadline = formatDeadline(task.deadline);
 
   const handleDiscuss = () => {
-    // Block action when chat is disabled, regardless of user role
+    // Block action when chat is disabled
     if (!task.telegramDiscussionEnabled) {
-      toast.error('Chat is currently disabled for this task');
+      toast.error("Chat is currently disabled for this task");
       return;
     }
 
-    const telegramLink = buildTelegramLink(task.telegramHandle);
-    window.open(telegramLink, '_blank');
+    if (onOpenChat) {
+      onOpenChat(task.id, task.title, task.creator.toString());
+      onOpenChange(false);
+    } else {
+      toast.info("Chat is not available right now");
+    }
   };
 
   const handleAccept = async () => {
     if (!identity) {
-      toast.error('Please login to accept tasks');
+      toast.error("Please login to accept tasks");
       return;
     }
 
     try {
       await assignMutation.mutateAsync(task.id);
-      
+
       // Open UPI payment link
       const upiLink = buildUPILink(task.price);
       window.location.href = upiLink;
-      
-      toast.success('Task accepted! Complete the payment to proceed.');
+
+      toast.success("Task accepted! Complete the payment to proceed.");
       onOpenChange(false);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to accept task');
+      toast.error(error.message || "Failed to accept task");
     }
   };
 
   const handleToggleTelegram = async (enabled: boolean) => {
     try {
       await toggleTelegramMutation.mutateAsync({ taskId: task.id, enabled });
-      toast.success(enabled ? 'Chat enabled' : 'Chat disabled');
+      toast.success(enabled ? "Chat enabled" : "Chat disabled");
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update chat setting');
+      toast.error(error.message || "Failed to update chat setting");
     }
   };
 
   const handleDeleteConfirm = async () => {
     try {
       await deleteMutation.mutateAsync(task.id);
-      toast.success('Post deleted');
+      toast.success("Post deleted");
       setIsDeleteDialogOpen(false);
       onOpenChange(false);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete post');
+      toast.error(error.message || "Failed to delete post");
     }
   };
 
@@ -110,7 +141,7 @@ export default function TaskDetailsSheet({ task, open, onOpenChange }: TaskDetai
           <div className="mt-6 space-y-6">
             {/* Task Photo */}
             <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted">
-              <img 
+              <img
                 src={task.taskPhoto.getDirectURL()}
                 alt={task.title}
                 className="w-full h-full object-cover"
@@ -135,7 +166,9 @@ export default function TaskDetailsSheet({ task, open, onOpenChange }: TaskDetai
               <div className="flex items-start gap-3">
                 <MapPinned className="w-5 h-5 text-[oklch(0.8_0.25_150)] mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Safe Meeting Spot</p>
+                  <p className="text-sm text-muted-foreground">
+                    Safe Meeting Spot
+                  </p>
                   <p className="font-medium">{task.safeSpot}</p>
                 </div>
               </div>
@@ -144,7 +177,9 @@ export default function TaskDetailsSheet({ task, open, onOpenChange }: TaskDetai
                 <IndianRupee className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm text-muted-foreground">Price</p>
-                  <p className="font-medium text-[oklch(0.8_0.25_150)] text-xl">₹{task.price.toString()}</p>
+                  <p className="font-medium text-[oklch(0.8_0.25_150)] text-xl">
+                    ₹{task.price.toString()}
+                  </p>
                 </div>
               </div>
 
@@ -162,9 +197,13 @@ export default function TaskDetailsSheet({ task, open, onOpenChange }: TaskDetai
                 <div className="flex items-start gap-3 p-4 rounded-xl bg-[oklch(0.8_0.25_150)]/10 border border-[oklch(0.8_0.25_150)]/30">
                   <CheckCircle className="w-5 h-5 text-[oklch(0.8_0.25_150)] mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium text-[oklch(0.8_0.25_150)]">Task Completed</p>
+                    <p className="font-medium text-[oklch(0.8_0.25_150)]">
+                      Task Completed
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      {task.isVerified ? 'Verified and rated' : 'Awaiting verification'}
+                      {task.isVerified
+                        ? "Verified and rated"
+                        : "Awaiting verification"}
                     </p>
                   </div>
                 </div>
@@ -172,9 +211,7 @@ export default function TaskDetailsSheet({ task, open, onOpenChange }: TaskDetai
             </div>
 
             {/* QR Code Section - Show for tasks that can be accepted */}
-            {canAccept && (
-              <QRCodeDisplay taskId={task.id} price={task.price} />
-            )}
+            {canAccept && <QRCodeDisplay taskId={task.id} price={task.price} />}
 
             {/* Actions */}
             <div className="space-y-3 pt-4">
@@ -182,25 +219,33 @@ export default function TaskDetailsSheet({ task, open, onOpenChange }: TaskDetai
               <div className="space-y-2">
                 {showTelegramButton && (
                   <Button
+                    data-ocid="task.discuss_chat_button"
                     onClick={handleDiscuss}
                     variant="outline"
                     disabled={telegramButtonDisabled}
                     className={`w-full backdrop-blur-xl bg-background/50 ${
-                      telegramButtonDisabled 
-                        ? 'opacity-50 text-muted-foreground cursor-not-allowed' 
-                        : ''
+                      telegramButtonDisabled
+                        ? "opacity-50 text-muted-foreground cursor-not-allowed"
+                        : "hover:bg-[oklch(0.8_0.25_150)]/10 hover:border-[oklch(0.8_0.25_150)]/60"
                     }`}
                   >
-                    <MessageCircle className={`w-4 h-4 mr-2 ${telegramButtonDisabled ? 'opacity-50' : ''}`} />
-                    Discuss on Telegram
+                    <MessageSquare
+                      className={`w-4 h-4 mr-2 ${telegramButtonDisabled ? "opacity-50" : "text-[oklch(0.8_0.25_150)]"}`}
+                    />
+                    Discuss on Chat
                   </Button>
                 )}
 
                 {/* Creator-only toggle control */}
                 {isCreator && (
                   <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border">
-                    <Label htmlFor="telegram-toggle" className="text-sm cursor-pointer">
-                      {task.telegramDiscussionEnabled ? 'Chat enabled' : 'Chat disabled'}
+                    <Label
+                      htmlFor="telegram-toggle"
+                      className="text-sm cursor-pointer"
+                    >
+                      {task.telegramDiscussionEnabled
+                        ? "Chat enabled"
+                        : "Chat disabled"}
                     </Label>
                     <Switch
                       id="telegram-toggle"
@@ -226,7 +271,9 @@ export default function TaskDetailsSheet({ task, open, onOpenChange }: TaskDetai
                   className="w-full bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] hover:opacity-90 text-black font-semibold"
                 >
                   <CreditCard className="w-4 h-4 mr-2" />
-                  {assignMutation.isPending ? 'Processing...' : 'Accept Task & Pay'}
+                  {assignMutation.isPending
+                    ? "Processing..."
+                    : "Accept Task & Pay"}
                 </Button>
               )}
 
@@ -269,22 +316,28 @@ export default function TaskDetailsSheet({ task, open, onOpenChange }: TaskDetai
       />
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent className="backdrop-blur-xl bg-card/95 border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this post?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your post and remove it from the hub.
+              This action cannot be undone. This will permanently delete your
+              post and remove it from the hub.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={deleteMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

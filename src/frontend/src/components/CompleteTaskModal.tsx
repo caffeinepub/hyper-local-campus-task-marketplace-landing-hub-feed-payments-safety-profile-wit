@@ -1,12 +1,17 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { useCompleteTask, useVerifyTask } from '@/hooks/useTaskActions';
-import { useInternetIdentity } from '@/hooks/useInternetIdentity';
-import { ExternalBlob, Stars, type Task } from '@/backend';
-import { toast } from 'sonner';
-import { Upload, Loader2, Star } from 'lucide-react';
+import { ExternalBlob, Stars, type Task } from "@/backend";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { useInternetIdentity } from "@/hooks/useInternetIdentity";
+import { useCompleteTask, useVerifyTask } from "@/hooks/useTaskActions";
+import { Loader2, Star, Upload } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface CompleteTaskModalProps {
   task: Task;
@@ -14,7 +19,11 @@ interface CompleteTaskModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export default function CompleteTaskModal({ task, open, onOpenChange }: CompleteTaskModalProps) {
+export default function CompleteTaskModal({
+  task,
+  open,
+  onOpenChange,
+}: CompleteTaskModalProps) {
   const { identity } = useInternetIdentity();
   const completeMutation = useCompleteTask();
   const verifyMutation = useVerifyTask();
@@ -23,10 +32,13 @@ export default function CompleteTaskModal({ task, open, onOpenChange }: Complete
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [rating, setRating] = useState<Stars | null>(null);
-  const [isCompleted, setIsCompleted] = useState(false);
+  const [_isCompleted, setIsCompleted] = useState(false);
 
-  const isCreator = identity?.getPrincipal().toString() === task.creator.toString();
-  const isPerformer = task.performer && identity?.getPrincipal().toString() === task.performer.toString();
+  const isCreator =
+    identity?.getPrincipal().toString() === task.creator.toString();
+  const isPerformer =
+    task.performer &&
+    identity?.getPrincipal().toString() === task.performer.toString();
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -42,36 +54,38 @@ export default function CompleteTaskModal({ task, open, onOpenChange }: Complete
 
   const handleComplete = async () => {
     if (!photoFile) {
-      toast.error('Please upload a completion photo');
+      toast.error("Please upload a completion photo");
       return;
     }
 
     try {
       const photoBytes = new Uint8Array(await photoFile.arrayBuffer());
-      const photoBlob = ExternalBlob.fromBytes(photoBytes).withUploadProgress((percentage) => {
-        setUploadProgress(percentage);
-      });
+      const photoBlob = ExternalBlob.fromBytes(photoBytes).withUploadProgress(
+        (percentage) => {
+          setUploadProgress(percentage);
+        },
+      );
 
       await completeMutation.mutateAsync({
         taskId: task.id,
-        photo: photoBlob
+        photo: photoBlob,
       });
 
-      toast.success('Task marked as complete! Awaiting verification.');
+      toast.success("Task marked as complete! Awaiting verification.");
       setIsCompleted(true);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to complete task');
+      toast.error(error.message || "Failed to complete task");
     }
   };
 
   const handleVerify = async () => {
     if (!rating) {
-      toast.error('Please select a rating');
+      toast.error("Please select a rating");
       return;
     }
 
     if (!task.performer) {
-      toast.error('No performer assigned');
+      toast.error("No performer assigned");
       return;
     }
 
@@ -79,12 +93,12 @@ export default function CompleteTaskModal({ task, open, onOpenChange }: Complete
       await verifyMutation.mutateAsync({
         taskId: task.id,
         rating,
-        performer: task.performer
+        performer: task.performer,
       });
 
-      toast.success('Task verified and rated!');
+      toast.success("Task verified and rated!");
       onOpenChange(false);
-      
+
       // Reset state
       setPhotoFile(null);
       setPhotoPreview(null);
@@ -92,16 +106,16 @@ export default function CompleteTaskModal({ task, open, onOpenChange }: Complete
       setRating(null);
       setIsCompleted(false);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to verify task');
+      toast.error(error.message || "Failed to verify task");
     }
   };
 
   const ratingOptions: { value: Stars; label: string }[] = [
-    { value: Stars.one, label: '1' },
-    { value: Stars.two, label: '2' },
-    { value: Stars.three, label: '3' },
-    { value: Stars.four, label: '4' },
-    { value: Stars.five, label: '5' }
+    { value: Stars.one, label: "1" },
+    { value: Stars.two, label: "2" },
+    { value: Stars.three, label: "3" },
+    { value: Stars.four, label: "4" },
+    { value: Stars.five, label: "5" },
   ];
 
   return (
@@ -109,7 +123,7 @@ export default function CompleteTaskModal({ task, open, onOpenChange }: Complete
       <DialogContent className="backdrop-blur-xl bg-card/95 border-border max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {isCreator ? 'Verify & Rate Task' : 'Complete Task'}
+            {isCreator ? "Verify & Rate Task" : "Complete Task"}
           </DialogTitle>
         </DialogHeader>
 
@@ -122,7 +136,11 @@ export default function CompleteTaskModal({ task, open, onOpenChange }: Complete
                 <div className="relative">
                   {photoPreview ? (
                     <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted">
-                      <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                      <img
+                        src={photoPreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
                       <Button
                         type="button"
                         variant="secondary"
@@ -139,7 +157,9 @@ export default function CompleteTaskModal({ task, open, onOpenChange }: Complete
                   ) : (
                     <label className="flex flex-col items-center justify-center aspect-video w-full border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-[oklch(0.8_0.25_150)]/50 transition-colors bg-muted/30">
                       <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                      <span className="text-sm text-muted-foreground">Click to upload photo</span>
+                      <span className="text-sm text-muted-foreground">
+                        Click to upload photo
+                      </span>
                       <input
                         type="file"
                         accept="image/*"
@@ -159,7 +179,7 @@ export default function CompleteTaskModal({ task, open, onOpenChange }: Complete
                     <span>{uploadProgress}%</span>
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] transition-all"
                       style={{ width: `${uploadProgress}%` }}
                     />
@@ -178,7 +198,7 @@ export default function CompleteTaskModal({ task, open, onOpenChange }: Complete
                     Uploading...
                   </>
                 ) : (
-                  'Submit Completion'
+                  "Submit Completion"
                 )}
               </Button>
             </>
@@ -191,7 +211,7 @@ export default function CompleteTaskModal({ task, open, onOpenChange }: Complete
                 <div className="space-y-2">
                   <Label>Completion Photo</Label>
                   <div className="aspect-video w-full overflow-hidden rounded-xl bg-muted">
-                    <img 
+                    <img
                       src={task.verificationPhoto.getDirectURL()}
                       alt="Completion"
                       className="w-full h-full object-cover"
@@ -204,23 +224,27 @@ export default function CompleteTaskModal({ task, open, onOpenChange }: Complete
               <div className="space-y-2">
                 <Label>Rate the Performer *</Label>
                 <div className="flex gap-2 justify-center py-4">
-                  {ratingOptions.map(({ value, label }) => (
+                  {ratingOptions.map(({ value }) => (
                     <button
                       key={value}
                       type="button"
                       onClick={() => setRating(value)}
                       className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                         rating === value
-                          ? 'bg-[oklch(0.8_0.25_150)] text-black scale-110'
-                          : 'bg-muted hover:bg-muted/80'
+                          ? "bg-[oklch(0.8_0.25_150)] text-black scale-110"
+                          : "bg-muted hover:bg-muted/80"
                       }`}
                     >
-                      <Star className={`w-6 h-6 ${rating === value ? 'fill-current' : ''}`} />
+                      <Star
+                        className={`w-6 h-6 ${rating === value ? "fill-current" : ""}`}
+                      />
                     </button>
                   ))}
                 </div>
                 <p className="text-center text-sm text-muted-foreground">
-                  {rating ? `${ratingOptions.find(r => r.value === rating)?.label} star${rating !== Stars.one ? 's' : ''}` : 'Select a rating'}
+                  {rating
+                    ? `${ratingOptions.find((r) => r.value === rating)?.label} star${rating !== Stars.one ? "s" : ""}`
+                    : "Select a rating"}
                 </p>
               </div>
 
@@ -235,7 +259,7 @@ export default function CompleteTaskModal({ task, open, onOpenChange }: Complete
                     Verifying...
                   </>
                 ) : (
-                  'Verify & Rate'
+                  "Verify & Rate"
                 )}
               </Button>
             </>

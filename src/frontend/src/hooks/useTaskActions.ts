@@ -1,8 +1,8 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useActor } from './useActor';
-import type { TaskId, Stars } from '../backend';
-import { ExternalBlob } from '../backend';
-import { Principal } from '@dfinity/principal';
+import type { Principal } from "@dfinity/principal";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Stars, TaskId } from "../backend";
+import type { ExternalBlob } from "../backend";
+import { useActor } from "./useActor";
 
 export function useAssignPerformer() {
   const { actor } = useActor();
@@ -11,12 +11,14 @@ export function useAssignPerformer() {
   return useMutation({
     mutationFn: async (taskId: TaskId) => {
       if (!actor) {
-        throw new Error('Actor not available. Please ensure you are logged in.');
+        throw new Error(
+          "Actor not available. Please ensure you are logged in.",
+        );
       }
       return actor.assignPerformer(taskId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }
@@ -28,12 +30,14 @@ export function useCompleteTask() {
   return useMutation({
     mutationFn: async (data: { taskId: TaskId; photo: ExternalBlob }) => {
       if (!actor) {
-        throw new Error('Actor not available. Please ensure you are logged in.');
+        throw new Error(
+          "Actor not available. Please ensure you are logged in.",
+        );
       }
       return actor.completeTask(data.taskId, data.photo);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }
@@ -49,14 +53,16 @@ export function useVerifyTask() {
       performer: Principal;
     }) => {
       if (!actor) {
-        throw new Error('Actor not available. Please ensure you are logged in.');
+        throw new Error(
+          "Actor not available. Please ensure you are logged in.",
+        );
       }
       return actor.verifyTask(data.taskId, data.rating, data.performer);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
     },
   });
 }
@@ -68,12 +74,14 @@ export function useToggleTelegramDiscussion() {
   return useMutation({
     mutationFn: async (data: { taskId: bigint; enabled: boolean }) => {
       if (!actor) {
-        throw new Error('Actor not available. Please ensure you are logged in.');
+        throw new Error(
+          "Actor not available. Please ensure you are logged in.",
+        );
       }
       return actor.toggleTelegramDiscussion(data.taskId, data.enabled);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }
@@ -85,12 +93,14 @@ export function useDeleteTask() {
   return useMutation({
     mutationFn: async (taskId: TaskId) => {
       if (!actor) {
-        throw new Error('Actor not available. Please ensure you are logged in.');
+        throw new Error(
+          "Actor not available. Please ensure you are logged in.",
+        );
       }
       return actor.deleteTask(taskId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }

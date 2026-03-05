@@ -1,14 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 const recentTasks = [
-  'Lab help done in Block B',
-  'Notes delivered to Library',
-  'Photography session at Auditorium',
-  'Tech support in Computer Lab',
-  'Assignment help in Block A',
-  'Delivery to Hostel Block C',
-  'Styling session completed',
-  'Moving help in Block D'
+  "Lab help done in Block B",
+  "Notes delivered to Library",
+  "Photography session at Auditorium",
+  "Tech support in Computer Lab",
+  "Assignment help in Block A",
+  "Delivery to Hostel Block C",
+  "Styling session completed",
+  "Moving help in Block D",
 ];
 
 export default function WeeklyProgressReel() {
@@ -45,14 +45,11 @@ export default function WeeklyProgressReel() {
         <span className="w-2 h-2 rounded-full bg-[oklch(0.8_0.25_150)] animate-pulse" />
         Weekly Progress
       </h2>
-      <div 
-        ref={scrollRef}
-        className="flex-1 overflow-hidden space-y-3"
-      >
+      <div ref={scrollRef} className="flex-1 overflow-hidden space-y-3">
         {/* Duplicate for seamless loop */}
         {[...recentTasks, ...recentTasks].map((task, index) => (
-          <div 
-            key={index}
+          <div
+            key={`reel-${index}-${task.slice(0, 8)}`}
             className="backdrop-blur-sm bg-background/50 border border-border/50 rounded-xl p-4 flex items-center gap-3"
           >
             <div className="w-10 h-10 rounded-full bg-[oklch(0.8_0.25_150)]/20 flex items-center justify-center flex-shrink-0">

@@ -1,17 +1,25 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useActor } from './useActor';
-import type { Task, TaskId } from '../backend';
-import { ExternalBlob } from '../backend';
-import { Principal } from '@dfinity/principal';
+import type { Principal } from "@dfinity/principal";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Task, TaskId } from "../backend";
+import type { ExternalBlob } from "../backend";
+import { useActor } from "./useActor";
+import { useInternetIdentity } from "./useInternetIdentity";
 
 export function useGetTasks() {
   const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  const isAuthenticated = !!identity;
 
   return useQuery<Task[]>({
-    queryKey: ['tasks'],
+    queryKey: ["tasks", isAuthenticated ? "authenticated" : "anonymous"],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.getTasks();
+      if (!actor) throw new Error("Actor not available");
+      if (isAuthenticated) {
+        // Authenticated users use getTasks() which returns all active tasks
+        return actor.getTasks();
+      }
+      // Anonymous users use searchTasks('') which is a public endpoint
+      return actor.searchTasks("");
     },
     enabled: !!actor && !actorFetching,
     retry: false,
@@ -22,9 +30,9 @@ export function useSearchTasks(search: string) {
   const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<Task[]>({
-    queryKey: ['tasks', 'search', search],
+    queryKey: ["tasks", "search", search],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.searchTasks(search);
     },
     enabled: !!actor && !actorFetching && search.length > 0,
@@ -36,10 +44,10 @@ export function useUserPostHistory(userPrincipal: Principal | null) {
   const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<Task[]>({
-    queryKey: ['tasks', 'userPostHistory', userPrincipal?.toString()],
+    queryKey: ["tasks", "userPostHistory", userPrincipal?.toString()],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      if (!userPrincipal) throw new Error('User principal not available');
+      if (!actor) throw new Error("Actor not available");
+      if (!userPrincipal) throw new Error("User principal not available");
       return actor.getTasksByUser(userPrincipal);
     },
     enabled: !!actor && !actorFetching && !!userPrincipal,
@@ -63,7 +71,9 @@ export function useCreateTask() {
       deadline: bigint | null;
     }) => {
       if (!actor) {
-        throw new Error('Actor not available. Please ensure you are logged in and try again.');
+        throw new Error(
+          "Actor not available. Please ensure you are logged in and try again.",
+        );
       }
       return actor.createTask(
         data.title,
@@ -73,11 +83,11 @@ export function useCreateTask() {
         data.safeSpot,
         data.telegramHandle,
         data.photo,
-        data.deadline
+        data.deadline,
       );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }

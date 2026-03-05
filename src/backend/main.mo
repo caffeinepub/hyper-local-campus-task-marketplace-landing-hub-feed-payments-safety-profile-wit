@@ -2,9 +2,9 @@ import Array "mo:core/Array";
 import Map "mo:core/Map";
 import Principal "mo:core/Principal";
 import Nat "mo:core/Nat";
-import Iter "mo:core/Iter";
 import Time "mo:core/Time";
 import Order "mo:core/Order";
+import Iter "mo:core/Iter";
 import Runtime "mo:core/Runtime";
 
 
@@ -53,12 +53,24 @@ actor {
     postHistory : [TaskId];
   };
 
+  // Internal storage profile (without computed fields)
+  type StoredProfile = {
+    tasksCompleted : Nat;
+    earnings : Nat;
+    ratingSum : Nat;
+    ratingCount : Nat;
+    tasksPosted : Nat;
+  };
+
   // Task Profiles (for task performance metrics)
   public type Profile = {
     tasksCompleted : Nat;
     earnings : Nat;
     ratingSum : Nat;
     ratingCount : Nat;
+    tasksPosted : Nat;
+    averageRating : Nat; // Scaled by 100 (e.g. 450 = 4.50 stars), 0 if no ratings
+    totalRatingsCount : Nat; // Alias for ratingCount, exposed for dashboard
   };
 
   module Profile {
@@ -89,7 +101,7 @@ actor {
   var nextTaskId = 0;
 
   let tasks = Map.empty<TaskId, Task>();
-  let profiles = Map.empty<Principal, Profile>();
+  let profiles = Map.empty<Principal, StoredProfile>();
   let userProfiles = Map.empty<Principal, UserProfile>();
 
   // Mixins
@@ -110,6 +122,34 @@ actor {
       case (#three) { 3 };
       case (#four) { 4 };
       case (#five) { 5 };
+    };
+  };
+
+  // Convert stored profile to public profile with computed fields
+  func toPublicProfile(stored : StoredProfile) : Profile {
+    let averageRating = if (stored.ratingCount == 0) {
+      0;
+    } else {
+      (stored.ratingSum * 100) / stored.ratingCount;
+    };
+    {
+      tasksCompleted = stored.tasksCompleted;
+      earnings = stored.earnings;
+      ratingSum = stored.ratingSum;
+      ratingCount = stored.ratingCount;
+      tasksPosted = stored.tasksPosted;
+      averageRating;
+      totalRatingsCount = stored.ratingCount;
+    };
+  };
+
+  func defaultStoredProfile() : StoredProfile {
+    {
+      tasksCompleted = 0;
+      earnings = 0;
+      ratingSum = 0;
+      ratingCount = 0;
+      tasksPosted = 0;
     };
   };
 
@@ -216,8 +256,8 @@ actor {
 
     tasks.add(id, task);
 
-    // Update user's post history
-    let updatedProfile = switch (userProfiles.get(caller)) {
+    // Update user's post history and tasksPosted count
+    let updatedUserProfile = switch (userProfiles.get(caller)) {
       case (null) {
         Runtime.trap("Profile does not exist. Please create a profile first.");
       };
@@ -225,7 +265,18 @@ actor {
         { profile with postHistory = profile.postHistory.concat([id]) };
       };
     };
-    userProfiles.add(caller, updatedProfile);
+    userProfiles.add(caller, updatedUserProfile);
+
+    // Update tasksPosted in performance profile
+    let currentStoredProfile = switch (profiles.get(caller)) {
+      case (null) { defaultStoredProfile() };
+      case (?p) { p };
+    };
+    let updatedStoredProfile = {
+      currentStoredProfile with
+      tasksPosted = currentStoredProfile.tasksPosted + 1;
+    };
+    profiles.add(caller, updatedStoredProfile);
 
     id;
   };
@@ -249,7 +300,9 @@ actor {
   };
 
   public query ({ caller }) func getTasks() : async [Task] {
-    // Public endpoint - no authorization required (guests can view tasks)
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only registered users can view tasks");
+    };
     tasks.values().toArray().filter(processFilteredTasks);
   };
 
@@ -358,22 +411,20 @@ actor {
         let updatedTask = { task with isVerified = true };
         tasks.add(taskId, updatedTask);
 
-        let currentProfile = switch (profiles.get(performer)) {
-          case (null) {
-            { tasksCompleted = 0; earnings = 0; ratingSum = 0; ratingCount = 0 };
-          };
-          case (?profile) { profile };
+        let currentStoredProfile = switch (profiles.get(performer)) {
+          case (null) { defaultStoredProfile() };
+          case (?p) { p };
         };
 
-        let updatedProfile = {
-          currentProfile with
-          tasksCompleted = currentProfile.tasksCompleted + 1;
-          earnings = currentProfile.earnings + task.price;
-          ratingSum = currentProfile.ratingSum + calcRatingValue(rating);
-          ratingCount = currentProfile.ratingCount + 1;
+        let updatedStoredProfile = {
+          currentStoredProfile with
+          tasksCompleted = currentStoredProfile.tasksCompleted + 1;
+          earnings = currentStoredProfile.earnings + task.price;
+          ratingSum = currentStoredProfile.ratingSum + calcRatingValue(rating);
+          ratingCount = currentStoredProfile.ratingCount + 1;
         };
 
-        profiles.add(performer, updatedProfile);
+        profiles.add(performer, updatedStoredProfile);
       };
       case (null) { Runtime.trap("Task not found") };
     };
@@ -382,21 +433,24 @@ actor {
   public query ({ caller }) func getProfile(user : Principal) : async Profile {
     // Public endpoint - no authorization required (anyone can view task performance profiles)
     switch (profiles.get(user)) {
-      case (?profile) { profile };
-      case (null) {
-        {
-          tasksCompleted = 0;
-          earnings = 0;
-          ratingSum = 0;
-          ratingCount = 0;
-        };
-      };
+      case (?stored) { toPublicProfile(stored) };
+      case (null) { toPublicProfile(defaultStoredProfile()) };
+    };
+  };
+
+  public query ({ caller }) func getCallerProfile() : async Profile {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access their own profile");
+    };
+    switch (profiles.get(caller)) {
+      case (?stored) { toPublicProfile(stored) };
+      case (null) { toPublicProfile(defaultStoredProfile()) };
     };
   };
 
   public query ({ caller }) func getLeaderboard() : async [Profile] {
     // Public endpoint - no authorization required (anyone can view leaderboard)
-    profiles.values().toArray().sort();
+    profiles.values().toArray().map(toPublicProfile).sort();
   };
 
   public query ({ caller }) func getCommentsForTask(_taskId : Nat) : async [(Text, Text, Text)] {
@@ -434,3 +488,4 @@ actor {
     );
   };
 };
+

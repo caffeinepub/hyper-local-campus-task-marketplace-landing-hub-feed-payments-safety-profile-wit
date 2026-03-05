@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { X, Upload, IndianRupee } from 'lucide-react';
-import { useCreateTask } from '../hooks/useTasks';
-import { useActor } from '../hooks/useActor';
-import { ExternalBlob } from '../backend';
-import { toast } from 'sonner';
-import { datetimeLocalToTime } from '../utils/time';
+import { IndianRupee, Upload, X } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { ExternalBlob } from "../backend";
+import { useActor } from "../hooks/useActor";
+import { useCreateTask } from "../hooks/useTasks";
+import { datetimeLocalToTime } from "../utils/time";
 
 interface PostTaskModalProps {
   isOpen: boolean;
@@ -12,14 +13,14 @@ interface PostTaskModalProps {
 }
 
 const categories = [
-  'Delivery',
-  'Cleaning',
-  'Repair',
-  'Shopping',
-  'Pet Care',
-  'Tutoring',
-  'Photography',
-  'Other',
+  "Delivery",
+  "Cleaning",
+  "Repair",
+  "Shopping",
+  "Pet Care",
+  "Tutoring",
+  "Photography",
+  "Other",
 ];
 
 export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
@@ -28,13 +29,13 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const [formData, setFormData] = useState({
-    title: '',
+    title: "",
     category: categories[0],
-    price: '',
-    location: '',
-    safeSpot: '',
-    telegramHandle: '',
-    deadline: '',
+    price: "",
+    location: "",
+    safeSpot: "",
+    telegramHandle: "",
+    deadline: "",
   });
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -56,12 +57,12 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
     e.preventDefault();
 
     if (!actor) {
-      toast.error('Connection not ready. Please wait a moment and try again.');
+      toast.error("Connection not ready. Please wait a moment and try again.");
       return;
     }
 
     if (!photoFile) {
-      toast.error('Please upload a task photo');
+      toast.error("Please upload a task photo");
       return;
     }
 
@@ -69,7 +70,7 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
       setUploadProgress(0);
       const photoBytes = new Uint8Array(await photoFile.arrayBuffer());
       const photoBlob = ExternalBlob.fromBytes(photoBytes).withUploadProgress(
-        (percentage) => setUploadProgress(percentage)
+        (percentage) => setUploadProgress(percentage),
       );
 
       const deadline = datetimeLocalToTime(formData.deadline);
@@ -85,23 +86,23 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
         deadline,
       });
 
-      toast.success('Task posted successfully!');
+      toast.success("Task posted successfully!");
       onClose();
       setFormData({
-        title: '',
+        title: "",
         category: categories[0],
-        price: '',
-        location: '',
-        safeSpot: '',
-        telegramHandle: '',
-        deadline: '',
+        price: "",
+        location: "",
+        safeSpot: "",
+        telegramHandle: "",
+        deadline: "",
       });
       setPhotoFile(null);
       setPhotoPreview(null);
       setUploadProgress(0);
     } catch (error: any) {
-      console.error('Error creating task:', error);
-      toast.error(error.message || 'Failed to create task');
+      console.error("Error creating task:", error);
+      toast.error(error.message || "Failed to create task");
     }
   };
 
@@ -116,6 +117,7 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
         <div className="sticky top-0 bg-background border-b border-border px-6 py-4 flex items-center justify-between">
           <h2 className="text-2xl font-bold">Post New Task</h2>
           <button
+            type="button"
             onClick={onClose}
             className="p-2 hover:bg-muted rounded-full transition-colors"
             disabled={isSubmitting}
@@ -132,7 +134,12 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
           )}
 
           <div>
-            <label className="block text-sm font-medium mb-2">Task Photo *</label>
+            <label
+              htmlFor="task-photo"
+              className="block text-sm font-medium mb-2"
+            >
+              Task Photo *
+            </label>
             <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
               {photoPreview ? (
                 <div className="relative">
@@ -153,12 +160,13 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
                   </button>
                 </div>
               ) : (
-                <label className="cursor-pointer">
+                <label htmlFor="task-photo" className="cursor-pointer">
                   <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground mb-2">
                     Click to upload task photo
                   </p>
                   <input
+                    id="task-photo"
                     type="file"
                     accept="image/*"
                     onChange={handlePhotoChange}
@@ -184,22 +192,38 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Title *</label>
+            <label
+              htmlFor="task-title"
+              className="block text-sm font-medium mb-2"
+            >
+              Title *
+            </label>
             <input
+              id="task-title"
               type="text"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="e.g., Deliver groceries to my home"
+              placeholder="e.g., Make database notes on behalf of me"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Category *</label>
+            <label
+              htmlFor="task-category"
+              className="block text-sm font-medium mb-2"
+            >
+              Category *
+            </label>
             <select
+              id="task-category"
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value })
+              }
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
               required
             >
@@ -212,14 +236,20 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
           </div>
 
           <div>
-            <label className="flex items-center gap-1 text-sm font-medium mb-2">
+            <label
+              htmlFor="task-price"
+              className="flex items-center gap-1 text-sm font-medium mb-2"
+            >
               <IndianRupee className="w-4 h-4" />
               Price *
             </label>
             <input
+              id="task-price"
               type="number"
               value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, price: e.target.value })
+              }
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Enter amount in rupees"
               min="1"
@@ -228,32 +258,54 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Location *</label>
+            <label
+              htmlFor="task-location"
+              className="block text-sm font-medium mb-2"
+            >
+              Location *
+            </label>
             <input
+              id="task-location"
               type="text"
               value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, location: e.target.value })
+              }
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="e.g., Koramangala, Bangalore"
+              placeholder="e.g., ABC university"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Safe Spot *</label>
+            <label
+              htmlFor="task-safe-spot"
+              className="block text-sm font-medium mb-2"
+            >
+              Safe Spot *
+            </label>
             <input
+              id="task-safe-spot"
               type="text"
               value={formData.safeSpot}
-              onChange={(e) => setFormData({ ...formData, safeSpot: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, safeSpot: e.target.value })
+              }
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="e.g., Near Cafe Coffee Day"
+              placeholder="e.g., Near A1 building"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Telegram Handle *</label>
+            <label
+              htmlFor="task-telegram"
+              className="block text-sm font-medium mb-2"
+            >
+              Telegram Handle *
+            </label>
             <input
+              id="task-telegram"
               type="text"
               value={formData.telegramHandle}
               onChange={(e) =>
@@ -266,13 +318,19 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label
+              htmlFor="task-deadline"
+              className="block text-sm font-medium mb-2"
+            >
               Deadline (Optional)
             </label>
             <input
+              id="task-deadline"
               type="datetime-local"
               value={formData.deadline}
-              onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, deadline: e.target.value })
+              }
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -283,10 +341,10 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
             className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting
-              ? 'Posting Task...'
+              ? "Posting Task..."
               : !isActorReady
-                ? 'Connecting...'
-                : 'Post Task'}
+                ? "Connecting..."
+                : "Post Task"}
           </button>
         </form>
       </div>
