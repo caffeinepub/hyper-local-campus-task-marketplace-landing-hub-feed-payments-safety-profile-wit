@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { useSheetAuth } from "@/hooks/useSheetAuth";
 import {
   AlertCircle,
-  ArrowLeft,
   CreditCard,
   GraduationCap,
   Loader2,
@@ -75,31 +74,11 @@ export default function CompleteProfileView({
     }
   };
 
-  const handleSkip = () => {
-    // Mark session as complete without saving new fields
-    if (sheetUser?.user_id) {
-      saveProfileDetails(sheetUser.user_id, "", "", "", "").catch(() => {
-        // silently ignore skip save errors
-      });
-    }
-    onComplete();
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="backdrop-blur-xl bg-card/30 border-b border-border/50 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleSkip}
-            className="hover:bg-[oklch(0.8_0.25_150)]/20 hover:text-[oklch(0.8_0.25_150)]"
-            aria-label="Skip for now"
-            data-ocid="complete-profile.secondary_button"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
           <h1 className="text-xl font-bold">Complete Your Profile</h1>
         </div>
       </header>
@@ -253,18 +232,9 @@ export default function CompleteProfileView({
             </CardContent>
           </Card>
 
-          {/* Skip link */}
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={handleSkip}
-              disabled={isSaving}
-              className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
-              data-ocid="complete-profile.secondary_button"
-            >
-              Skip for now
-            </button>
-          </div>
+          <p className="text-center text-xs text-muted-foreground">
+            These details help your campus community connect with you safely.
+          </p>
         </div>
       </main>
     </div>

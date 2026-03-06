@@ -21,6 +21,7 @@ export interface SheetSession {
 interface UseSheetAuthReturn {
   currentUser: SheetSession | null;
   isLoading: boolean;
+  isInitializing: boolean;
   loginWithGoogle: (email: string, name: string) => Promise<void>;
   signUpWithEmail: (
     name: string,
@@ -68,11 +69,13 @@ function readSession(): SheetSession | null {
 export function useSheetAuth(): UseSheetAuthReturn {
   const [currentUser, setCurrentUser] = useState<SheetSession | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // Restore session on mount
   useEffect(() => {
     const session = readSession();
     if (session) setCurrentUser(session);
+    setIsInitializing(false);
   }, []);
 
   const loginWithGoogle = useCallback(
@@ -96,7 +99,12 @@ export function useSheetAuth(): UseSheetAuthReturn {
           email: user.email,
           profile_complete: isNewUser
             ? false
-            : !!(user.full_name && user.phone_number),
+            : !!(
+                user.full_name &&
+                user.phone_number &&
+                user.student_id &&
+                user.upi_id
+              ),
           full_name: user.full_name,
           phone_number: user.phone_number,
           student_id: user.student_id,
@@ -164,7 +172,12 @@ export function useSheetAuth(): UseSheetAuthReturn {
           user_id: user.user_id,
           name: user.name,
           email: user.email,
-          profile_complete: !!(user.full_name && user.phone_number),
+          profile_complete: !!(
+            user.full_name &&
+            user.phone_number &&
+            user.student_id &&
+            user.upi_id
+          ),
           full_name: user.full_name,
           phone_number: user.phone_number,
           student_id: user.student_id,
@@ -220,6 +233,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
   return {
     currentUser,
     isLoading,
+    isInitializing,
     loginWithGoogle,
     signUpWithEmail,
     loginWithEmail,

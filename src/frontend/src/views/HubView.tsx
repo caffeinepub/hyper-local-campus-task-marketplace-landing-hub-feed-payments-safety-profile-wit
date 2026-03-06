@@ -83,12 +83,8 @@ export default function HubView({ onNavigate, onOpenChat }: HubViewProps) {
   }, [tasks, selectedCategory, sortFilter, searchQuery]);
 
   const handlePostTask = () => {
-    // SheetDB users can post tasks directly
+    // SheetDB users can post tasks directly — no actor check needed
     if (sheetUser) {
-      if (!isActorReady) {
-        toast.error("Connection not ready. Please wait a moment.");
-        return;
-      }
       setIsPostModalOpen(true);
       return;
     }

@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
-import { useState } from "react";
+import { useSheetAuth } from "@/hooks/useSheetAuth";
+import { useEffect, useState } from "react";
 import CompleteProfileView from "./views/CompleteProfileView";
 import DMView, { type ChatContext } from "./views/DMView";
 import HubView from "./views/HubView";
@@ -11,6 +12,15 @@ export type View = "landing" | "hub" | "profile" | "chat" | "complete-profile";
 function App() {
   const [currentView, setCurrentView] = useState<View>("landing");
   const [chatContext, setChatContext] = useState<ChatContext | null>(null);
+  const { currentUser: sheetUser, isInitializing } = useSheetAuth();
+
+  // Global guard: whenever a SheetDB session exists with profile_complete === false,
+  // redirect to the complete-profile screen regardless of which view is active.
+  useEffect(() => {
+    if (!isInitializing && sheetUser && sheetUser.profile_complete === false) {
+      setCurrentView("complete-profile");
+    }
+  }, [sheetUser, isInitializing]);
 
   const handleOpenChat = (
     taskId: bigint,

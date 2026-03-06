@@ -67,6 +67,7 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
   // SheetDB auth
   const {
     currentUser: sheetUser,
+    isInitializing: sheetInitializing,
     loginWithGoogle,
     logout: sheetLogout,
   } = useSheetAuth();
@@ -97,8 +98,14 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
 
   // Determine which onboarding step to show
   const getStep = (): OnboardingStep => {
+    // Wait for SheetDB session to restore from localStorage
+    if (sheetInitializing) return "login";
     // SheetDB session takes priority
-    if (sheetUser) return "dashboard";
+    if (sheetUser) {
+      // If profile is incomplete, stay on login screen until redirect fires
+      if (sheetUser.profile_complete === false) return "login";
+      return "dashboard";
+    }
     if (!isAuthenticated) return "login";
     if (userProfileLoading || !isFetched) return "login";
     if (userProfile === null) return "setup";
@@ -106,6 +113,15 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
   };
 
   const step = getStep();
+
+  // Redirect to complete-profile whenever sheetUser is set with an incomplete profile.
+  // This covers ALL auth paths: Google sign-in (profile page or hub modal),
+  // email sign-up, and email login for users who skipped profile completion.
+  useEffect(() => {
+    if (sheetUser && sheetUser.profile_complete === false) {
+      onNavigate("complete-profile");
+    }
+  }, [sheetUser, onNavigate]);
 
   // Read stored telegram handle for dashboard
   const storedTelegram = identity
@@ -256,6 +272,39 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
   // Display name and email from SheetDB session or ICP profile
   const displayName = sheetUser?.name || userProfile?.name || "Profile";
   const displayEmail = sheetUser?.email || userProfile?.gmailAddress || null;
+
+  // ─── STEP: Initializing ─────────────────────────────────────────────────────
+  if (sheetInitializing) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <header className="backdrop-blur-xl bg-card/30 border-b border-border/50 sticky top-0 z-20">
+          <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onNavigate("hub")}
+              className="hover:bg-[oklch(0.8_0.25_150)]/20 hover:text-[oklch(0.8_0.25_150)]"
+              data-ocid="profile.link"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-2xl font-bold">Profile</h1>
+          </div>
+        </header>
+        <main className="flex-1 flex items-center justify-center px-4 py-12">
+          <div
+            className="w-full max-w-sm space-y-4"
+            data-ocid="profile.loading_state"
+          >
+            <Skeleton className="h-32 w-full rounded-2xl" />
+            <Skeleton className="h-12 w-full rounded-xl" />
+            <Skeleton className="h-12 w-full rounded-xl" />
+            <Skeleton className="h-12 w-full rounded-xl" />
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   // ─── STEP: Login ────────────────────────────────────────────────────────────
   if (step === "login") {

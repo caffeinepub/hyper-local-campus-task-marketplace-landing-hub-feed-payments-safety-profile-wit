@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ExternalBlob } from "../backend";
 import { useActor } from "../hooks/useActor";
+import { useSheetAuth } from "../hooks/useSheetAuth";
 import { useCreateTask } from "../hooks/useTasks";
 import { datetimeLocalToTime } from "../utils/time";
 
@@ -25,6 +26,7 @@ const categories = [
 
 export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
   const { actor, isFetching: actorLoading } = useActor();
+  const { currentUser: sheetUser } = useSheetAuth();
   const createTask = useCreateTask();
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -56,7 +58,8 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!actor) {
+    // SheetDB users don't need the ICP actor to post tasks
+    if (!actor && !sheetUser) {
       toast.error("Connection not ready. Please wait a moment and try again.");
       return;
     }
@@ -109,7 +112,8 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
   if (!isOpen) return null;
 
   const isSubmitting = createTask.isPending;
-  const isActorReady = !!actor && !actorLoading;
+  // SheetDB users are always "ready" — they don't depend on the ICP actor
+  const isActorReady = !!sheetUser || (!!actor && !actorLoading);
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
