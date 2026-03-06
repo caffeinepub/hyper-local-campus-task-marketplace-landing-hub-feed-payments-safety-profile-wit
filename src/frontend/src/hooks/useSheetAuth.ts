@@ -18,17 +18,22 @@ export interface SheetSession {
   upi_id?: string;
 }
 
+/** Returned by auth functions so callers can act immediately on profile completion status. */
+export interface AuthResult {
+  profile_complete: boolean;
+}
+
 interface UseSheetAuthReturn {
   currentUser: SheetSession | null;
   isLoading: boolean;
   isInitializing: boolean;
-  loginWithGoogle: (email: string, name: string) => Promise<void>;
+  loginWithGoogle: (email: string, name: string) => Promise<AuthResult>;
   signUpWithEmail: (
     name: string,
     email: string,
     password: string,
-  ) => Promise<void>;
-  loginWithEmail: (email: string, password: string) => Promise<void>;
+  ) => Promise<AuthResult>;
+  loginWithEmail: (email: string, password: string) => Promise<AuthResult>;
   logout: () => void;
   saveProfileDetails: (
     user_id: string,
@@ -79,7 +84,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
   }, []);
 
   const loginWithGoogle = useCallback(
-    async (email: string, name: string): Promise<void> => {
+    async (email: string, name: string): Promise<AuthResult> => {
       setIsLoading(true);
       try {
         let user = await findUserByEmail(email);
@@ -93,18 +98,20 @@ export function useSheetAuth(): UseSheetAuthReturn {
           isNewUser = true;
         }
 
+        const profile_complete = isNewUser
+          ? false
+          : !!(
+              user.full_name &&
+              user.phone_number &&
+              user.student_id &&
+              user.upi_id
+            );
+
         const session: SheetSession = {
           user_id: user.user_id,
           name: user.name || name,
           email: user.email,
-          profile_complete: isNewUser
-            ? false
-            : !!(
-                user.full_name &&
-                user.phone_number &&
-                user.student_id &&
-                user.upi_id
-              ),
+          profile_complete,
           full_name: user.full_name,
           phone_number: user.phone_number,
           student_id: user.student_id,
@@ -112,6 +119,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
         };
         persistSession(session);
         setCurrentUser(session);
+        return { profile_complete };
       } finally {
         setIsLoading(false);
       }
@@ -120,7 +128,11 @@ export function useSheetAuth(): UseSheetAuthReturn {
   );
 
   const signUpWithEmail = useCallback(
-    async (name: string, email: string, password: string): Promise<void> => {
+    async (
+      name: string,
+      email: string,
+      password: string,
+    ): Promise<AuthResult> => {
       setIsLoading(true);
       try {
         const existing = await findUserByEmail(email);
@@ -142,6 +154,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
         };
         persistSession(session);
         setCurrentUser(session);
+        return { profile_complete: false };
       } finally {
         setIsLoading(false);
       }
@@ -150,7 +163,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
   );
 
   const loginWithEmail = useCallback(
-    async (email: string, password: string): Promise<void> => {
+    async (email: string, password: string): Promise<AuthResult> => {
       setIsLoading(true);
       try {
         const user = await findUserByEmail(email);
@@ -168,16 +181,18 @@ export function useSheetAuth(): UseSheetAuthReturn {
           throw new Error("Incorrect password. Please try again.");
         }
 
+        const profile_complete = !!(
+          user.full_name &&
+          user.phone_number &&
+          user.student_id &&
+          user.upi_id
+        );
+
         const session: SheetSession = {
           user_id: user.user_id,
           name: user.name,
           email: user.email,
-          profile_complete: !!(
-            user.full_name &&
-            user.phone_number &&
-            user.student_id &&
-            user.upi_id
-          ),
+          profile_complete,
           full_name: user.full_name,
           phone_number: user.phone_number,
           student_id: user.student_id,
@@ -185,6 +200,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
         };
         persistSession(session);
         setCurrentUser(session);
+        return { profile_complete };
       } finally {
         setIsLoading(false);
       }

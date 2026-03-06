@@ -94,7 +94,9 @@ export default function HubView({ onNavigate, onOpenChat }: HubViewProps) {
       return;
     }
     if (!isActorReady) {
-      toast.error("Connection not ready. Please wait a moment.");
+      // Still booting — treat as unauthenticated and prompt login
+      setAuthPromptReason("post-task");
+      setIsAuthPromptOpen(true);
       return;
     }
     if (!hasProfile) {

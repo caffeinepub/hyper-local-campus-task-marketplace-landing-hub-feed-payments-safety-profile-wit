@@ -30,11 +30,13 @@ import {
   Lock,
   LogIn,
   Mail,
+  Pencil,
   Phone,
   Send,
   Trophy,
   User,
   UserCircle2,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SiGoogle } from "react-icons/si";
@@ -70,6 +72,7 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
     isInitializing: sheetInitializing,
     loginWithGoogle,
     logout: sheetLogout,
+    saveProfileDetails,
   } = useSheetAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<"signin" | "signup">(
@@ -82,6 +85,14 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
   const [manualGmail, setManualGmail] = useState("");
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
   const [isSigningInWithGoogle, setIsSigningInWithGoogle] = useState(false);
+
+  // Edit Profile state
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [editFullName, setEditFullName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editStudentId, setEditStudentId] = useState("");
+  const [editUpiId, setEditUpiId] = useState("");
 
   const isAuthenticated = !!identity;
   const userPrincipal = identity?.getPrincipal() || null;
@@ -186,20 +197,11 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
       if (email) {
         const name =
           googleUser?.name || email.split("@")[0].replace(/[._]/g, " ");
-        await loginWithGoogle(email, name);
+        const result = await loginWithGoogle(email, name);
         toast.success("Signed in successfully!");
-        // Check if new user needs to complete profile
-        try {
-          const raw = localStorage.getItem("proxiis_session");
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (parsed?.profile_complete === false) {
-              onNavigate("complete-profile");
-              return;
-            }
-          }
-        } catch {
-          // ignore parse errors
+        if (!result.profile_complete) {
+          onNavigate("complete-profile");
+          return;
         }
       } else {
         setIsSigningInWithGoogle(false);
@@ -261,6 +263,42 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
       toast.error(error.message || "Failed to create profile");
     } finally {
       setIsCreatingProfile(false);
+    }
+  };
+
+  const handleOpenEditProfile = () => {
+    setEditFullName(sheetUser?.full_name || "");
+    setEditPhone(sheetUser?.phone_number || "");
+    setEditStudentId(sheetUser?.student_id || "");
+    setEditUpiId(sheetUser?.upi_id || "");
+    setIsEditingProfile(true);
+  };
+
+  const handleCancelEditProfile = () => {
+    setIsEditingProfile(false);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!sheetUser) return;
+    if (!editFullName.trim()) {
+      toast.error("Full name is required");
+      return;
+    }
+    setIsSavingProfile(true);
+    try {
+      await saveProfileDetails(
+        sheetUser.user_id,
+        editFullName.trim(),
+        editPhone.trim(),
+        editStudentId.trim(),
+        editUpiId.trim(),
+      );
+      toast.success("Profile updated successfully!");
+      setIsEditingProfile(false);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update profile");
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -780,65 +818,190 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
               </div>
             )}
 
-            {/* SheetDB profile fields */}
-            {sheetUser?.full_name && (
-              <div className="flex items-start gap-3">
-                <User className="w-4 h-4 text-muted-foreground mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Full Name
-                  </p>
-                  <p className="text-sm font-medium break-all">
-                    {sheetUser.full_name}
-                  </p>
+            {/* SheetDB profile fields — view mode */}
+            {sheetUser && !isEditingProfile && (
+              <>
+                <div className="flex items-start gap-3">
+                  <User className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Full Name
+                    </p>
+                    <p className="text-sm font-medium break-all">
+                      {sheetUser.full_name || "Not provided"}
+                    </p>
+                  </div>
                 </div>
-              </div>
+                <div className="flex items-start gap-3">
+                  <Phone className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Phone Number
+                    </p>
+                    <p className="text-sm font-medium break-all">
+                      {sheetUser.phone_number || "Not provided"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <GraduationCap className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Student ID (SBU ID)
+                    </p>
+                    <p className="text-sm font-medium break-all">
+                      {sheetUser.student_id || "Not provided"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CreditCard className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      UPI ID
+                    </p>
+                    <p className="text-sm font-medium break-all">
+                      {sheetUser.upi_id || "Not provided"}
+                    </p>
+                  </div>
+                </div>
+              </>
             )}
-            {sheetUser && (
-              <div className="flex items-start gap-3">
-                <Phone className="w-4 h-4 text-muted-foreground mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-xs font-medium text-muted-foreground">
+
+            {/* Edit Profile inline form — SheetDB users only */}
+            {sheetUser && isEditingProfile && (
+              <div className="space-y-4 pt-1 pb-1 border border-[oklch(0.8_0.25_150)]/25 rounded-xl p-4 bg-[oklch(0.8_0.25_150)]/5">
+                {/* Full Name */}
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="edit-full-name"
+                    className="text-xs font-semibold flex items-center gap-1.5"
+                  >
+                    <User className="w-3 h-3 text-[oklch(0.8_0.25_150)]" />
+                    Full Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="edit-full-name"
+                    placeholder="Enter your full name"
+                    value={editFullName}
+                    onChange={(e) => setEditFullName(e.target.value)}
+                    disabled={isSavingProfile}
+                    className="bg-background/60 h-9 text-sm"
+                    data-ocid="complete-profile.input"
+                  />
+                </div>
+
+                {/* Phone Number */}
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="edit-phone"
+                    className="text-xs font-semibold flex items-center gap-1.5"
+                  >
+                    <Phone className="w-3 h-3 text-[oklch(0.8_0.25_150)]" />
                     Phone Number
-                  </p>
-                  <p className="text-sm font-medium break-all">
-                    {sheetUser.phone_number || "Not provided"}
-                  </p>
+                  </Label>
+                  <Input
+                    id="edit-phone"
+                    placeholder="+91 98765 43210"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    disabled={isSavingProfile}
+                    className="bg-background/60 h-9 text-sm"
+                    data-ocid="complete-profile.input"
+                  />
                 </div>
-              </div>
-            )}
-            {sheetUser && (
-              <div className="flex items-start gap-3">
-                <GraduationCap className="w-4 h-4 text-muted-foreground mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-xs font-medium text-muted-foreground">
+
+                {/* Student ID */}
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="edit-student-id"
+                    className="text-xs font-semibold flex items-center gap-1.5"
+                  >
+                    <GraduationCap className="w-3 h-3 text-[oklch(0.8_0.25_150)]" />
                     Student ID (SBU ID)
-                  </p>
-                  <p className="text-sm font-medium break-all">
-                    {sheetUser.student_id || "Not provided"}
-                  </p>
+                  </Label>
+                  <Input
+                    id="edit-student-id"
+                    placeholder="e.g. SBU2024001"
+                    value={editStudentId}
+                    onChange={(e) => setEditStudentId(e.target.value)}
+                    disabled={isSavingProfile}
+                    className="bg-background/60 h-9 text-sm"
+                    data-ocid="complete-profile.input"
+                  />
                 </div>
-              </div>
-            )}
-            {sheetUser && (
-              <div className="flex items-start gap-3">
-                <CreditCard className="w-4 h-4 text-muted-foreground mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-xs font-medium text-muted-foreground">
+
+                {/* UPI ID */}
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="edit-upi-id"
+                    className="text-xs font-semibold flex items-center gap-1.5"
+                  >
+                    <CreditCard className="w-3 h-3 text-[oklch(0.8_0.25_150)]" />
                     UPI ID
-                  </p>
-                  <p className="text-sm font-medium break-all">
-                    {sheetUser.upi_id || "Not provided"}
-                  </p>
+                  </Label>
+                  <Input
+                    id="edit-upi-id"
+                    placeholder="yourname@upi"
+                    value={editUpiId}
+                    onChange={(e) => setEditUpiId(e.target.value)}
+                    disabled={isSavingProfile}
+                    className="bg-background/60 h-9 text-sm"
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveProfile()}
+                    data-ocid="complete-profile.input"
+                  />
+                </div>
+
+                {/* Save / Cancel */}
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    onClick={handleSaveProfile}
+                    disabled={isSavingProfile || !editFullName.trim()}
+                    size="sm"
+                    className="flex-1 bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] hover:opacity-90 text-black font-bold"
+                    data-ocid="dashboard.save_button"
+                  >
+                    {isSavingProfile ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        Saving…
+                      </>
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleCancelEditProfile}
+                    disabled={isSavingProfile}
+                    size="sm"
+                    variant="outline"
+                    className="border-border/60 hover:border-destructive/50 hover:text-destructive"
+                    data-ocid="dashboard.cancel_button"
+                  >
+                    <X className="w-3.5 h-3.5 mr-1" />
+                    Cancel
+                  </Button>
                 </div>
               </div>
             )}
 
-            <div className="pt-2 border-t border-border/50">
+            <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Lock className="w-3 h-3" />
                 This information is private and only visible to you
               </p>
+              {sheetUser && !isEditingProfile && (
+                <Button
+                  onClick={handleOpenEditProfile}
+                  size="sm"
+                  variant="outline"
+                  className="border-[oklch(0.8_0.25_150)]/40 text-[oklch(0.8_0.25_150)] hover:bg-[oklch(0.8_0.25_150)]/15 hover:border-[oklch(0.8_0.25_150)]/70 shrink-0 gap-1.5 text-xs font-semibold"
+                  data-ocid="dashboard.edit_button"
+                >
+                  <Pencil className="w-3 h-3" />
+                  Edit Profile
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

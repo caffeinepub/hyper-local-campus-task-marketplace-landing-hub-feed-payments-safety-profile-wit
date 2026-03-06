@@ -74,18 +74,6 @@ export default function AuthModal({
     onOpenChange(isOpen);
   };
 
-  /** Read the stored session and check if profile_complete is false (new user). */
-  const checkNeedsProfileCompletion = (): boolean => {
-    try {
-      const raw = localStorage.getItem("proxiis_session");
-      if (!raw) return false;
-      const parsed = JSON.parse(raw);
-      return parsed?.profile_complete === false;
-    } catch {
-      return false;
-    }
-  };
-
   // ── Google sign-in (both tabs use the same flow) ──────────────────────
   const handleGoogleSignIn = async (mode: "signin" | "signup") => {
     if (!googleLoaded) {
@@ -105,14 +93,11 @@ export default function AuthModal({
         setGoogleLoading(false);
         return;
       }
-      // Try to read the decoded user from the Google hook indirectly
-      // The hook sets `user` internally; we only get the email from signIn().
-      // We'll use email as name fallback if name is unavailable.
       const nameFromEmail = email.split("@")[0].replace(/[._]/g, " ");
-      await loginWithGoogle(email, nameFromEmail);
+      const result = await loginWithGoogle(email, nameFromEmail);
       toast.success("Signed in with Google!");
       onOpenChange(false);
-      if (checkNeedsProfileCompletion()) {
+      if (!result.profile_complete) {
         onNeedsProfileCompletion?.();
       } else {
         onSuccess?.();
@@ -132,10 +117,10 @@ export default function AuthModal({
       return;
     }
     try {
-      await loginWithEmail(signInEmail.trim(), signInPassword);
+      const result = await loginWithEmail(signInEmail.trim(), signInPassword);
       toast.success("Logged in successfully!");
       onOpenChange(false);
-      if (checkNeedsProfileCompletion()) {
+      if (!result.profile_complete) {
         onNeedsProfileCompletion?.();
       } else {
         onSuccess?.();
@@ -166,14 +151,14 @@ export default function AuthModal({
       return;
     }
     try {
-      await signUpWithEmail(
+      const result = await signUpWithEmail(
         signUpName.trim(),
         signUpEmail.trim(),
         signUpPassword,
       );
       toast.success("Account created! Welcome to PROXIIS 🎉");
       onOpenChange(false);
-      if (checkNeedsProfileCompletion()) {
+      if (!result.profile_complete) {
         onNeedsProfileCompletion?.();
       } else {
         onSuccess?.();
