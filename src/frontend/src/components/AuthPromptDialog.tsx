@@ -22,6 +22,8 @@ interface AuthPromptDialogProps {
   reason?: "view-task" | "post-task";
   /** Called after successful login so the parent can proceed */
   onLoginSuccess?: () => void;
+  /** Called when a new user needs to complete their profile after sign-up */
+  onNeedsProfileCompletion?: () => void;
 }
 
 export default function AuthPromptDialog({
@@ -29,6 +31,7 @@ export default function AuthPromptDialog({
   onOpenChange,
   reason = "view-task",
   onLoginSuccess,
+  onNeedsProfileCompletion,
 }: AuthPromptDialogProps) {
   const { login, loginStatus } = useInternetIdentity();
   const { signIn: googleSignIn, isLoaded: googleLoaded } = useGoogleAuth();
@@ -61,6 +64,17 @@ export default function AuthPromptDialog({
     }
   };
 
+  const checkNeedsProfileCompletion = (): boolean => {
+    try {
+      const raw = localStorage.getItem("proxiis_session");
+      if (!raw) return false;
+      const parsed = JSON.parse(raw);
+      return parsed?.profile_complete === false;
+    } catch {
+      return false;
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     if (!googleLoaded) {
       toast.error("Google Sign-In is still loading. Please wait.");
@@ -77,7 +91,11 @@ export default function AuthPromptDialog({
       await loginWithGoogle(email, nameFromEmail);
       toast.success("Signed in with Google!");
       onOpenChange(false);
-      onLoginSuccess?.();
+      if (checkNeedsProfileCompletion()) {
+        onNeedsProfileCompletion?.();
+      } else {
+        onLoginSuccess?.();
+      }
     } catch (err: any) {
       toast.error(err?.message || "Google sign-in failed.");
     } finally {
@@ -213,6 +231,11 @@ export default function AuthPromptDialog({
           setAuthModalOpen(false);
           onOpenChange(false);
           onLoginSuccess?.();
+        }}
+        onNeedsProfileCompletion={() => {
+          setAuthModalOpen(false);
+          onOpenChange(false);
+          onNeedsProfileCompletion?.();
         }}
       />
     </>

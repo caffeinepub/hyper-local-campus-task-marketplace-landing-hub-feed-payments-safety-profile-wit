@@ -285,6 +285,7 @@ export default function HubView({ onNavigate, onOpenChat }: HubViewProps) {
             ? handlePostTaskAfterLogin
             : undefined
         }
+        onNeedsProfileCompletion={() => onNavigate("complete-profile")}
       />
     </div>
   );

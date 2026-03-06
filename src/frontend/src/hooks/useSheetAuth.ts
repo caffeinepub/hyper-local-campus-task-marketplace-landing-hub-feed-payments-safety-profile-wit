@@ -164,7 +164,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
           user_id: user.user_id,
           name: user.name,
           email: user.email,
-          profile_complete: true,
+          profile_complete: !!(user.full_name && user.phone_number),
           full_name: user.full_name,
           phone_number: user.phone_number,
           student_id: user.student_id,

@@ -74,11 +74,6 @@ export default function AuthModal({
     onOpenChange(isOpen);
   };
 
-  const handleSuccess = () => {
-    onOpenChange(false);
-    onSuccess?.();
-  };
-
   /** Read the stored session and check if profile_complete is false (new user). */
   const checkNeedsProfileCompletion = (): boolean => {
     try {
@@ -139,7 +134,12 @@ export default function AuthModal({
     try {
       await loginWithEmail(signInEmail.trim(), signInPassword);
       toast.success("Logged in successfully!");
-      handleSuccess();
+      onOpenChange(false);
+      if (checkNeedsProfileCompletion()) {
+        onNeedsProfileCompletion?.();
+      } else {
+        onSuccess?.();
+      }
     } catch (err: any) {
       setSignInError(err?.message || "Login failed. Please try again.");
     }
