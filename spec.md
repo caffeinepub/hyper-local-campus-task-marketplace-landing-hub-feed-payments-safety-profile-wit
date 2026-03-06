@@ -1,41 +1,67 @@
-# PROXIIS - Campus Marketplace
+# PROXIIS — Complete Profile Flow
 
 ## Current State
-The app is a full-stack campus task marketplace. The frontend has:
-- LandingView, HubView, ProfileView pages
-- TaskCard, TaskDetailsSheet components
-- HubTopBar with Search, Bell, Trophy, and Profile icons
-- TaskDetailsSheet includes a "Discuss on Telegram" button (opens external Telegram link) and a creator-only toggle to enable/disable chat
-- The backend (main.mo) handles tasks, profiles, and a toggleTelegramDiscussion flag
-- App.tsx uses a simple `View` type with 'landing' | 'hub' | 'profile'
+
+The app has a SheetDB-based auth system (`useSheetAuth`, `sheetdb.ts`) where:
+- Google Sign-In and Email/Password sign-up save `user_id`, `name`, `email`, and optionally `password_hash` to the SheetDB users sheet via `saveUserToSheet()`.
+- After successful sign-up/sign-in, the user is immediately considered "logged in" and sees their profile dashboard.
+- The `SheetUser` type only holds `user_id`, `name`, `email`.
+- The SheetDB `users` sheet already exists at `https://sheetdb.io/api/v1/xslj9jybiwh8t`.
+- The Profile dashboard shows Name and Email in "Personal Information" but does not show Phone Number, Student ID (SBU ID), or UPI ID.
 
 ## Requested Changes (Diff)
 
 ### Add
-- A new `chat` view type in App.tsx's View union
-- A new `DMView` (or `ChatView`) component that shows a DM inbox — list of all conversations the logged-in user has had, ordered by most recent message (Instagram-like)
-- Each conversation is tied to a specific task (task title shown as context)
-- Within a conversation, users can send and receive messages in real time
-- A chat message icon (MessageSquare) in HubTopBar that navigates to the chat/DM view — visible alongside the existing Search, Bell, Trophy, Profile icons
-- A new `sendMessage` and `getMessages` backend API to store and retrieve chat messages between two principals for a specific task
-- Chat messages stored in backend: `{ id, taskId, sender, recipient, text, timestamp }`
-- A `getConversations` backend API that returns all conversations for the caller (grouped by taskId + other user)
+- A new `CompleteProfileView` (full-screen or modal-style) shown after initial authentication (both Google Sign-In and Email/Password) for **new users only** (i.e., users who were just created, not returning users).
+- This screen asks for: Full Name, Phone Number, Student ID (SBU ID), UPI ID.
+- On Submit, PATCH/update the user's row in the SheetDB users sheet with `full_name`, `phone_number`, `student_id`, `upi_id` columns.
+- The session object and localStorage should store whether the user has completed profile setup (a `profile_complete` boolean flag) so returning users skip this screen.
+- New utility function `updateUserProfile(user_id, profileData)` in `sheetdb.ts` that sends a PATCH request to SheetDB to update the row matching the user's `user_id`.
+- New function `getUserById(user_id)` in `sheetdb.ts` to fetch a user's full row including the new columns.
 
 ### Modify
-- In `TaskDetailsSheet`: replace "Discuss on Telegram" button text and action with "Discuss on Chat" — clicking it navigates to the DM view pre-loaded with the conversation between the task creator and the current viewer (not opening external Telegram link)
-- The existing toggle still works — when chat is disabled, the "Discuss on Chat" button is greyed out/non-functional (same behavior as before)
-- `App.tsx`: Add `chat` to the View type; render the new ChatView/DMView when `currentView === 'chat'`
-- `HubView.tsx`: Pass `onNavigate` correctly so navigation to 'chat' works; receive `selectedTaskId` context for opening a specific DM thread
-- `HubTopBar.tsx`: Add a MessageSquare icon button that navigates to the chat view
+- `SheetUser` interface in `sheetdb.ts`: add optional fields `full_name`, `phone_number`, `student_id`, `upi_id`.
+- `SheetSession` interface in `useSheetAuth.ts`: add optional `profile_complete: boolean` and the four new optional fields.
+- `useSheetAuth.loginWithGoogle` and `useSheetAuth.signUpWithEmail`: after successful auth, detect if the user is **new** (just created) vs **returning** (existed). Return or expose a `isNewUser` flag.
+- `AuthModal.tsx`: after a successful Google Sign-In or Email sign-up (new user only), instead of calling `handleSuccess()` which closes the modal, trigger showing the CompleteProfile screen. For returning users (login), call `handleSuccess()` as before.
+- `ProfileView.tsx` (Dashboard step): add Phone Number, Student ID, and UPI ID rows in the "Personal Information" card, reading from the SheetDB session.
+- `App.tsx`: add a `"complete-profile"` view type and render `CompleteProfileView` when active.
 
 ### Remove
-- The external `buildTelegramLink` usage inside the "Discuss" button handler in TaskDetailsSheet (replaced with in-app navigation)
+- Nothing removed.
 
 ## Implementation Plan
-1. Backend: Add `ChatMessage` type, `sendMessage(taskId, recipientPrincipal, text)`, `getMessages(taskId, otherUser)`, and `getConversations()` APIs to main.mo
-2. Frontend hooks: Create `useChat` hooks (useSendMessage, useGetMessages, useGetConversations) consuming the new backend APIs
-3. New `DMView` component: Full-screen chat view with left sidebar showing conversation list (task title, other user name, last message preview) and right panel showing the message thread with input box
-4. Modify `TaskDetailsSheet`: Replace `handleDiscuss` to navigate to chat view with taskId + recipientPrincipal context instead of opening Telegram
-5. Modify `HubTopBar`: Add MessageSquare icon button navigating to 'chat'
-6. Modify `App.tsx`: Add 'chat' to View type; add state for `chatContext` (taskId + recipientPrincipal); pass context to DMView; render DMView when currentView === 'chat'
-7. Modify `HubView`: Forward chat navigation with context from TaskDetailsSheet
+
+1. **`sheetdb.ts`**: 
+   - Extend `SheetUser` with `full_name?`, `phone_number?`, `student_id?`, `upi_id?`.
+   - Add `updateUserProfile(user_id, data)` — PATCH to `https://sheetdb.io/api/v1/xslj9jybiwh8t/user_id/{user_id}?sheet=users` with the profile fields.
+   - Add `getUserById(user_id)` — GET to search by user_id.
+
+2. **`useSheetAuth.ts`**: 
+   - Extend `SheetSession` with `profile_complete?`, `full_name?`, `phone_number?`, `student_id?`, `upi_id?`.
+   - In `loginWithGoogle`: if user already exists, set `profile_complete: true` (or check if fields are filled). If new user, set `profile_complete: false`.
+   - In `signUpWithEmail`: new user, always set `profile_complete: false`.
+   - In `loginWithEmail`: returning user, set `profile_complete: true` (or check fields).
+   - Expose `isNewUser` or derive `needsProfileCompletion` from session.
+   - Add `saveProfileDetails(user_id, full_name, phone_number, student_id, upi_id)` function that calls `updateUserProfile`, then updates session with new data and `profile_complete: true`.
+
+3. **`CompleteProfileView.tsx`** (new component/view):
+   - Fullscreen page matching the dark neon PROXIIS theme (same glassmorphism dark card style as AuthModal and ProfileView).
+   - Title: "Complete Your Profile"
+   - Subheading: "Just a few more details to get you started on PROXIIS."
+   - Four input fields: Full Name (pre-filled from auth name), Phone Number (tel input), Student ID / SBU ID (text), UPI ID (text, e.g. name@upi).
+   - Submit button calls `saveProfileDetails`, then calls `onComplete()` which navigates to hub or profile.
+   - Skip option ("Skip for now") that sets `profile_complete: true` without saving optional fields, to avoid trapping the user.
+
+4. **`AuthModal.tsx`**:
+   - After Google sign-up/sign-in (new user) and email sign-up success, instead of calling `handleSuccess()`, call a new `onNeedsProfileCompletion()` callback prop.
+   - On login (returning user), keep existing `handleSuccess()` behavior.
+
+5. **`App.tsx`**:
+   - Add `"complete-profile"` to the `View` type.
+   - Render `<CompleteProfileView>` when `currentView === "complete-profile"`.
+   - Pass `onComplete` that navigates to `"hub"`.
+
+6. **`ProfileView.tsx`** (dashboard step):
+   - In the Personal Information card, add rows for Phone Number, Student ID, and UPI ID using `sheetUser.phone_number`, `sheetUser.student_id`, `sheetUser.upi_id`.
+   - Show "Not provided" for unfilled fields.

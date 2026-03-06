@@ -1,11 +1,12 @@
 import { Toaster } from "@/components/ui/sonner";
 import { useState } from "react";
+import CompleteProfileView from "./views/CompleteProfileView";
 import DMView, { type ChatContext } from "./views/DMView";
 import HubView from "./views/HubView";
 import LandingView from "./views/LandingView";
 import ProfileView from "./views/ProfileView";
 
-export type View = "landing" | "hub" | "profile" | "chat";
+export type View = "landing" | "hub" | "profile" | "chat" | "complete-profile";
 
 function App() {
   const [currentView, setCurrentView] = useState<View>("landing");
@@ -49,6 +50,9 @@ function App() {
         )}
         {currentView === "chat" && (
           <DMView chatContext={chatContext} onNavigate={setCurrentView} />
+        )}
+        {currentView === "complete-profile" && (
+          <CompleteProfileView onComplete={() => setCurrentView("hub")} />
         )}
       </div>
 

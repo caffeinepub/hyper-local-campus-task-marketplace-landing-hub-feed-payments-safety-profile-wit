@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useSheetAuth } from "@/hooks/useSheetAuth";
 import { FolderOpen, Loader2, Plus } from "lucide-react";
 import React, { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -37,13 +38,16 @@ export default function HubView({ onNavigate, onOpenChat }: HubViewProps) {
   const [sortFilter, setSortFilter] = useState<FilterType>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const { currentUser: sheetUser } = useSheetAuth();
+
   const isAuthenticated = !!identity;
   const isActorReady = !!actor && !actorLoading;
   const hasProfile =
-    isAuthenticated &&
-    profileFetched &&
-    userProfile !== null &&
-    userProfile !== undefined;
+    sheetUser !== null ||
+    (isAuthenticated &&
+      profileFetched &&
+      userProfile !== null &&
+      userProfile !== undefined);
 
   const filteredAndSortedTasks = useMemo(() => {
     let filtered = tasks.filter((task) => {
@@ -79,6 +83,15 @@ export default function HubView({ onNavigate, onOpenChat }: HubViewProps) {
   }, [tasks, selectedCategory, sortFilter, searchQuery]);
 
   const handlePostTask = () => {
+    // SheetDB users can post tasks directly
+    if (sheetUser) {
+      if (!isActorReady) {
+        toast.error("Connection not ready. Please wait a moment.");
+        return;
+      }
+      setIsPostModalOpen(true);
+      return;
+    }
     if (!isAuthenticated) {
       setAuthPromptReason("post-task");
       setIsAuthPromptOpen(true);
@@ -218,7 +231,7 @@ export default function HubView({ onNavigate, onOpenChat }: HubViewProps) {
       </div>
 
       {/* Guest banner — subtle, non-blocking */}
-      {!isAuthenticated && !actorLoading && (
+      {!isAuthenticated && !sheetUser && !actorLoading && (
         <div className="max-w-5xl mx-auto w-full px-5 pt-5">
           <div className="flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-[oklch(0.8_0.25_150)]/10 to-[oklch(0.7_0.2_270)]/10 border border-[oklch(0.8_0.25_150)]/20 px-4 py-3">
             <p className="text-sm text-muted-foreground">
