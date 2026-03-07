@@ -1,7 +1,9 @@
 import {
   findUserByEmail,
+  findUserByUsername,
   saveUserToSheet,
   updateUserProfile,
+  updateUsername,
 } from "@/utils/sheetdb";
 import { useCallback, useEffect, useState } from "react";
 
@@ -16,6 +18,7 @@ export interface SheetSession {
   phone_number?: string;
   student_id?: string;
   upi_id?: string;
+  username?: string;
 }
 
 /** Returned by auth functions so callers can act immediately on profile completion status. */
@@ -42,6 +45,8 @@ interface UseSheetAuthReturn {
     student_id: string,
     upi_id: string,
   ) => Promise<void>;
+  checkUsernameAvailable: (username: string) => Promise<boolean>;
+  saveUsername: (user_id: string, username: string) => Promise<void>;
 }
 
 async function hashPassword(password: string): Promise<string> {
@@ -53,6 +58,8 @@ async function hashPassword(password: string): Promise<string> {
 
 function persistSession(session: SheetSession): void {
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  // Notify all other hook instances on the same tab to re-sync
+  window.dispatchEvent(new CustomEvent("proxiis_session_updated"));
 }
 
 function clearSession(): void {
@@ -76,11 +83,33 @@ export function useSheetAuth(): UseSheetAuthReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Restore session on mount
+  // Restore session on mount and listen for cross-instance updates
   useEffect(() => {
     const session = readSession();
     if (session) setCurrentUser(session);
     setIsInitializing(false);
+
+    // Re-sync when another hook instance writes to localStorage (cross-tab)
+    const handleStorageChange = () => {
+      const updated = readSession();
+      setCurrentUser(updated);
+    };
+    window.addEventListener("storage", handleStorageChange);
+
+    // Re-sync when another hook instance on the same tab updates the session
+    const handleSameTabUpdate = () => {
+      const updated = readSession();
+      setCurrentUser(updated);
+    };
+    window.addEventListener("proxiis_session_updated", handleSameTabUpdate);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener(
+        "proxiis_session_updated",
+        handleSameTabUpdate,
+      );
+    };
   }, []);
 
   const loginWithGoogle = useCallback(
@@ -116,6 +145,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
           phone_number: user.phone_number,
           student_id: user.student_id,
           upi_id: user.upi_id,
+          username: user.username,
         };
         persistSession(session);
         setCurrentUser(session);
@@ -197,6 +227,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
           phone_number: user.phone_number,
           student_id: user.student_id,
           upi_id: user.upi_id,
+          username: user.username,
         };
         persistSession(session);
         setCurrentUser(session);
@@ -241,6 +272,32 @@ export function useSheetAuth(): UseSheetAuthReturn {
     [],
   );
 
+  const checkUsernameAvailable = useCallback(
+    async (username: string): Promise<boolean> => {
+      if (!username.trim()) return false;
+      const existing = await findUserByUsername(username.trim().toLowerCase());
+      if (!existing) return true;
+      // Allow if the username belongs to the current user
+      const session = readSession();
+      return existing.user_id === session?.user_id;
+    },
+    [],
+  );
+
+  const saveUsername = useCallback(
+    async (user_id: string, username: string): Promise<void> => {
+      const normalised = username.trim().toLowerCase();
+      await updateUsername(user_id, normalised);
+      setCurrentUser((prev) => {
+        if (!prev) return prev;
+        const updated: SheetSession = { ...prev, username: normalised };
+        persistSession(updated);
+        return updated;
+      });
+    },
+    [],
+  );
+
   const logout = useCallback((): void => {
     clearSession();
     setCurrentUser(null);
@@ -255,5 +312,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
     loginWithEmail,
     logout,
     saveProfileDetails,
+    checkUsernameAvailable,
+    saveUsername,
   };
 }

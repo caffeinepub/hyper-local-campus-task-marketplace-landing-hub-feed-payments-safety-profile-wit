@@ -2,7 +2,7 @@ import type { Task } from "@/backend";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatDeadline } from "@/utils/time";
-import { Clock, IndianRupee, MapPin } from "lucide-react";
+import { AtSign, Clock, IndianRupee, MapPin } from "lucide-react";
 import { useState } from "react";
 import AuthPromptDialog from "./AuthPromptDialog";
 import TaskDetailsSheet from "./TaskDetailsSheet";
@@ -11,6 +11,17 @@ interface TaskCardProps {
   task: Task;
   isAuthenticated?: boolean;
   onOpenChat?: (taskId: bigint, taskTitle: string, creatorId: string) => void;
+}
+
+/** Returns a short display handle for the task creator. */
+function getCreatorHandle(task: Task): string {
+  if (task.telegramHandle?.trim()) {
+    const handle = task.telegramHandle.trim();
+    return handle.startsWith("@") ? handle : `@${handle}`;
+  }
+  // Fall back to a shortened principal
+  const principal = task.creator.toString();
+  return `@${principal.slice(0, 5)}…${principal.slice(-3)}`;
 }
 
 export default function TaskCard({
@@ -68,6 +79,14 @@ export default function TaskCard({
 
           {/* Task Info */}
           <div className="p-5 space-y-4">
+            {/* Creator handle */}
+            <div className="flex items-center gap-1.5">
+              <AtSign className="w-3.5 h-3.5 text-[oklch(0.8_0.25_150)] flex-shrink-0" />
+              <span className="text-xs font-semibold text-[oklch(0.8_0.25_150)] truncate">
+                {getCreatorHandle(task)}
+              </span>
+            </div>
+
             <h3 className="font-bold text-xl line-clamp-2 leading-tight group-hover:text-[oklch(0.8_0.25_150)] transition-colors">
               {task.title}
             </h3>

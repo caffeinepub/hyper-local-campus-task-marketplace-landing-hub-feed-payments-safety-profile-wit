@@ -14,6 +14,7 @@ export interface SheetUser {
   phone_number?: string;
   student_id?: string;
   upi_id?: string;
+  username?: string;
 }
 
 /**
@@ -78,7 +79,60 @@ export async function findUserByEmail(
     phone_number: row.phone_number || undefined,
     student_id: row.student_id || undefined,
     upi_id: row.upi_id || undefined,
+    username: row.username || undefined,
   };
+}
+
+/**
+ * Find a user by username (case-insensitive exact match).
+ * Returns null if not found.
+ */
+export async function findUserByUsername(
+  username: string,
+): Promise<SheetUser | null> {
+  const url = `${USERS_SHEET_SEARCH}&username=${encodeURIComponent(username.toLowerCase())}`;
+  const response = await fetch(url, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) return null;
+    return null; // treat errors as "not found" for availability checks
+  }
+
+  const data = await response.json();
+  if (!Array.isArray(data) || data.length === 0) return null;
+
+  const row = data[0];
+  return {
+    user_id: row.user_id ?? "",
+    name: row.name ?? "",
+    email: row.email ?? "",
+    username: row.username || undefined,
+  };
+}
+
+/**
+ * PATCH username by user_id.
+ */
+export async function updateUsername(
+  user_id: string,
+  username: string,
+): Promise<void> {
+  const url = `${SHEETDB_BASE}/user_id/${encodeURIComponent(user_id)}?sheet=users`;
+  const response = await fetch(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ data: { username: username.toLowerCase() } }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "unknown error");
+    throw new Error(
+      `Failed to update username: ${response.status} – ${errorText}`,
+    );
+  }
 }
 
 /**
@@ -140,5 +194,6 @@ export async function getUserById(user_id: string): Promise<SheetUser | null> {
     phone_number: row.phone_number || undefined,
     student_id: row.student_id || undefined,
     upi_id: row.upi_id || undefined,
+    username: row.username || undefined,
   };
 }

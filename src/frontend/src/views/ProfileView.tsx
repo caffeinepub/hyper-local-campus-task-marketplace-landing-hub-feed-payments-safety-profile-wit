@@ -20,6 +20,7 @@ import { useUserPostHistory } from "@/hooks/useTasks";
 import {
   AlertCircle,
   ArrowLeft,
+  AtSign,
   CheckCircle,
   ChevronRight,
   CreditCard,
@@ -38,18 +39,29 @@ import {
   UserCircle2,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SiGoogle } from "react-icons/si";
 import { toast } from "sonner";
 import type { View } from "../App";
 
 interface ProfileViewProps {
   onNavigate: (view: View) => void;
+  showWelcomeBanner?: boolean;
+  onWelcomeBannerSeen?: () => void;
+  /** Set to true right after the user completes the profile form so the
+   *  dashboard renders immediately, before the SheetDB session state update
+   *  has propagated through React. */
+  forceProfileComplete?: boolean;
 }
 
 type OnboardingStep = "login" | "setup" | "dashboard";
 
-export default function ProfileView({ onNavigate }: ProfileViewProps) {
+export default function ProfileView({
+  onNavigate,
+  showWelcomeBanner = false,
+  onWelcomeBannerSeen,
+  forceProfileComplete = false,
+}: ProfileViewProps) {
   const { identity, login, clear, isLoggingIn } = useInternetIdentity();
   const { data: profile, isLoading } = useGetCallerProfile();
   const {
@@ -73,6 +85,8 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
     loginWithGoogle,
     logout: sheetLogout,
     saveProfileDetails,
+    checkUsernameAvailable,
+    saveUsername,
   } = useSheetAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<"signin" | "signup">(
@@ -86,6 +100,31 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
   const [isSigningInWithGoogle, setIsSigningInWithGoogle] = useState(false);
 
+  // Welcome banner state
+  const [bannerVisible, setBannerVisible] = useState(showWelcomeBanner);
+
+  // Sync bannerVisible when prop changes (e.g. navigating back to profile after completion)
+  useEffect(() => {
+    if (showWelcomeBanner) {
+      setBannerVisible(true);
+    }
+  }, [showWelcomeBanner]);
+
+  // Auto-dismiss banner after 5 seconds
+  useEffect(() => {
+    if (!bannerVisible) return;
+    const timer = setTimeout(() => {
+      setBannerVisible(false);
+      onWelcomeBannerSeen?.();
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [bannerVisible, onWelcomeBannerSeen]);
+
+  const handleDismissBanner = () => {
+    setBannerVisible(false);
+    onWelcomeBannerSeen?.();
+  };
+
   // Edit Profile state
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -93,6 +132,29 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
   const [editPhone, setEditPhone] = useState("");
   const [editStudentId, setEditStudentId] = useState("");
   const [editUpiId, setEditUpiId] = useState("");
+
+  // Username (User ID) state
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [editUsername, setEditUsername] = useState("");
+  const [usernameStatus, setUsernameStatus] = useState<
+    "idle" | "checking" | "available" | "taken" | "invalid"
+  >("idle");
+  const [isSavingUsername, setIsSavingUsername] = useState(false);
+  // Debounce ref for username availability checks
+  const usernameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  // Request counter to discard stale async results
+  const usernameCheckCountRef = useRef(0);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (usernameDebounceRef.current) {
+        clearTimeout(usernameDebounceRef.current);
+      }
+    };
+  }, []);
 
   const isAuthenticated = !!identity;
   const userPrincipal = identity?.getPrincipal() || null;
@@ -113,8 +175,10 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
     if (sheetInitializing) return "login";
     // SheetDB session takes priority
     if (sheetUser) {
-      // If profile is incomplete, stay on login screen until redirect fires
-      if (sheetUser.profile_complete === false) return "login";
+      // forceProfileComplete is true when navigating directly from CompleteProfileView
+      // — the session state update may still be in-flight, so skip the incomplete check.
+      if (sheetUser.profile_complete === false && !forceProfileComplete)
+        return "login";
       return "dashboard";
     }
     if (!isAuthenticated) return "login";
@@ -124,15 +188,6 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
   };
 
   const step = getStep();
-
-  // Redirect to complete-profile whenever sheetUser is set with an incomplete profile.
-  // This covers ALL auth paths: Google sign-in (profile page or hub modal),
-  // email sign-up, and email login for users who skipped profile completion.
-  useEffect(() => {
-    if (sheetUser && sheetUser.profile_complete === false) {
-      onNavigate("complete-profile");
-    }
-  }, [sheetUser, onNavigate]);
 
   // Read stored telegram handle for dashboard
   const storedTelegram = identity
@@ -299,6 +354,90 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
       toast.error(err?.message || "Failed to update profile");
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleOpenEditUsername = () => {
+    const existing = sheetUser?.username || "";
+    setEditUsername(existing);
+    setIsEditingUsername(true);
+
+    // Pre-check the existing username so the save button is ready to use
+    if (existing && existing.length >= 3) {
+      setUsernameStatus("checking");
+      const checkId = ++usernameCheckCountRef.current;
+      checkUsernameAvailable(existing)
+        .then((available) => {
+          if (checkId !== usernameCheckCountRef.current) return;
+          setUsernameStatus(available ? "available" : "taken");
+        })
+        .catch(() => {
+          if (checkId !== usernameCheckCountRef.current) return;
+          setUsernameStatus("idle");
+        });
+    } else {
+      setUsernameStatus("idle");
+    }
+  };
+
+  const handleUsernameChange = (value: string) => {
+    // Only allow lowercase letters, numbers, underscores, hyphens
+    const cleaned = value.toLowerCase().replace(/[^a-z0-9_-]/g, "");
+    setEditUsername(cleaned);
+
+    // Clear any pending debounce
+    if (usernameDebounceRef.current) {
+      clearTimeout(usernameDebounceRef.current);
+    }
+
+    if (!cleaned) {
+      setUsernameStatus("idle");
+      return;
+    }
+    if (cleaned.length < 3) {
+      setUsernameStatus("invalid");
+      return;
+    }
+
+    // Show "checking" immediately so UX feels responsive
+    setUsernameStatus("checking");
+
+    // Capture the current request number to detect stale responses
+    const checkId = ++usernameCheckCountRef.current;
+
+    // Debounce the actual API call by 400ms
+    usernameDebounceRef.current = setTimeout(async () => {
+      try {
+        const available = await checkUsernameAvailable(cleaned);
+        // Discard result if a newer check has been issued
+        if (checkId !== usernameCheckCountRef.current) return;
+        setUsernameStatus(available ? "available" : "taken");
+      } catch {
+        if (checkId !== usernameCheckCountRef.current) return;
+        setUsernameStatus("idle");
+      }
+    }, 400);
+  };
+
+  const handleSaveUsername = async () => {
+    if (!sheetUser?.user_id) return;
+    if (!editUsername.trim() || editUsername.length < 3) {
+      toast.error("Username must be at least 3 characters");
+      return;
+    }
+    if (usernameStatus === "taken") {
+      toast.error("That username is already taken");
+      return;
+    }
+    setIsSavingUsername(true);
+    try {
+      await saveUsername(sheetUser.user_id, editUsername);
+      toast.success(`User ID @${editUsername} saved successfully!`);
+      setIsEditingUsername(false);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save username");
+    } finally {
+      setIsSavingUsername(false);
     }
   };
 
@@ -759,6 +898,34 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
       </header>
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-6 space-y-5">
+        {/* Welcome banner — shown immediately after profile completion */}
+        {bannerVisible && (
+          <div
+            className="relative flex items-start gap-3 rounded-xl border border-[oklch(0.8_0.25_150)]/50 bg-[oklch(0.8_0.25_150)]/10 backdrop-blur-sm px-4 py-3.5 shadow-[0_0_20px_oklch(0.8_0.25_150_/_0.15)]"
+            data-ocid="dashboard.success_state"
+          >
+            <CheckCircle className="w-5 h-5 text-[oklch(0.8_0.25_150)] shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-[oklch(0.8_0.25_150)]">
+                Profile created successfully! 🎉
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Your profile is all set. Welcome to PROXIIS — start browsing
+                tasks or post your own!
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDismissBanner}
+              className="shrink-0 text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
+              aria-label="Dismiss"
+              data-ocid="dashboard.close_button"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Dashboard Stats Panel */}
         <section>
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
@@ -994,17 +1161,175 @@ export default function ProfileView({ onNavigate }: ProfileViewProps) {
                 <Button
                   onClick={handleOpenEditProfile}
                   size="sm"
-                  variant="outline"
-                  className="border-[oklch(0.8_0.25_150)]/40 text-[oklch(0.8_0.25_150)] hover:bg-[oklch(0.8_0.25_150)]/15 hover:border-[oklch(0.8_0.25_150)]/70 shrink-0 gap-1.5 text-xs font-semibold"
+                  className="bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] hover:opacity-90 text-black font-bold shrink-0 gap-1.5 px-4 shadow-[0_0_12px_oklch(0.8_0.25_150_/_0.3)]"
                   data-ocid="dashboard.edit_button"
                 >
-                  <Pencil className="w-3 h-3" />
+                  <Pencil className="w-3.5 h-3.5" />
                   Edit Profile
                 </Button>
               )}
             </div>
           </CardContent>
         </Card>
+
+        {/* User ID Card — SheetDB users only */}
+        {sheetUser && (
+          <Card
+            className="backdrop-blur-xl bg-card/30 border-[oklch(0.8_0.25_150)]/40"
+            data-ocid="dashboard.userid.card"
+          >
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <AtSign className="w-4 h-4 text-[oklch(0.8_0.25_150)]" />
+                User ID
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* User ID row — view mode */}
+              {!isEditingUsername ? (
+                <div className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/40 px-3 py-2.5">
+                  <User className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground mb-0.5">
+                      User ID
+                    </p>
+                    {sheetUser.username ? (
+                      <p className="text-sm font-semibold text-[oklch(0.8_0.25_150)] break-all">
+                        @{sheetUser.username}
+                      </p>
+                    ) : (
+                      <p className="text-xs font-mono text-foreground/80 break-all select-all">
+                        {sheetUser.user_id}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    onClick={handleOpenEditUsername}
+                    size="sm"
+                    variant="outline"
+                    className="border-[oklch(0.8_0.25_150)]/40 hover:border-[oklch(0.8_0.25_150)] hover:text-[oklch(0.8_0.25_150)] gap-1.5 shrink-0"
+                    data-ocid="dashboard.userid.edit_button"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit
+                  </Button>
+                </div>
+              ) : (
+                /* User ID row — edit mode */
+                <div className="space-y-3 border border-[oklch(0.8_0.25_150)]/25 rounded-xl p-4 bg-[oklch(0.8_0.25_150)]/5">
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="edit-username"
+                      className="text-xs font-semibold flex items-center gap-1.5"
+                    >
+                      <AtSign className="w-3 h-3 text-[oklch(0.8_0.25_150)]" />
+                      Edit User ID
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">
+                        @
+                      </span>
+                      <Input
+                        id="edit-username"
+                        placeholder="yourhandle"
+                        value={editUsername}
+                        onChange={(e) => handleUsernameChange(e.target.value)}
+                        disabled={isSavingUsername}
+                        className={`bg-background/60 h-9 text-sm pl-7 ${
+                          usernameStatus === "available"
+                            ? "border-[oklch(0.8_0.25_150)] focus-visible:ring-[oklch(0.8_0.25_150)]"
+                            : usernameStatus === "taken" ||
+                                usernameStatus === "invalid"
+                              ? "border-destructive focus-visible:ring-destructive"
+                              : ""
+                        }`}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && handleSaveUsername()
+                        }
+                        data-ocid="dashboard.userid.input"
+                      />
+                      {/* Inline status indicator */}
+                      <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                        {usernameStatus === "checking" && (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                        )}
+                        {usernameStatus === "available" && (
+                          <CheckCircle className="w-3.5 h-3.5 text-[oklch(0.8_0.25_150)]" />
+                        )}
+                        {(usernameStatus === "taken" ||
+                          usernameStatus === "invalid") && (
+                          <X className="w-3.5 h-3.5 text-destructive" />
+                        )}
+                      </div>
+                    </div>
+                    {usernameStatus === "taken" && (
+                      <p
+                        className="text-xs text-destructive flex items-center gap-1"
+                        data-ocid="dashboard.userid.error_state"
+                      >
+                        <AlertCircle className="w-3 h-3" />
+                        That username is already taken
+                      </p>
+                    )}
+                    {usernameStatus === "invalid" && (
+                      <p className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        At least 3 characters — letters, numbers, _ or - only
+                      </p>
+                    )}
+                    {usernameStatus === "available" && (
+                      <p className="text-xs text-[oklch(0.8_0.25_150)] flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        Username is available!
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Only letters, numbers, underscores and hyphens. At least 3
+                      characters.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSaveUsername}
+                      disabled={
+                        isSavingUsername ||
+                        !editUsername.trim() ||
+                        editUsername.length < 3 ||
+                        usernameStatus === "taken" ||
+                        usernameStatus === "invalid" ||
+                        usernameStatus === "checking" ||
+                        usernameStatus === "idle"
+                      }
+                      size="sm"
+                      className="flex-1 bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] hover:opacity-90 text-black font-bold"
+                      data-ocid="dashboard.userid.save_button"
+                    >
+                      {isSavingUsername ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                          Saving…
+                        </>
+                      ) : (
+                        "Save"
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => setIsEditingUsername(false)}
+                      disabled={isSavingUsername}
+                      size="sm"
+                      variant="outline"
+                      className="border-border/60"
+                      data-ocid="dashboard.userid.cancel_button"
+                    >
+                      <X className="w-3.5 h-3.5 mr-1" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Detailed Stats — only for ICP users who have full profile */}
         {!sheetUser &&

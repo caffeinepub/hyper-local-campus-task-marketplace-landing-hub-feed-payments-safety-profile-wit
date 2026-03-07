@@ -12,15 +12,25 @@ export type View = "landing" | "hub" | "profile" | "chat" | "complete-profile";
 function App() {
   const [currentView, setCurrentView] = useState<View>("landing");
   const [chatContext, setChatContext] = useState<ChatContext | null>(null);
+  const [profileJustCreated, setProfileJustCreated] = useState(false);
+  // Prevents the guard effect from re-triggering "complete-profile" right after
+  // the user submits the form (race condition: sheetUser still has stale profile_complete===false).
+  const [profileCompleted, setProfileCompleted] = useState(false);
   const { currentUser: sheetUser, isInitializing } = useSheetAuth();
 
   // Global guard: whenever a SheetDB session exists with profile_complete === false,
   // redirect to the complete-profile screen regardless of which view is active.
+  // Skipped when profileCompleted is true to avoid a re-entry race condition.
   useEffect(() => {
-    if (!isInitializing && sheetUser && sheetUser.profile_complete === false) {
+    if (
+      !isInitializing &&
+      sheetUser &&
+      sheetUser.profile_complete === false &&
+      !profileCompleted
+    ) {
       setCurrentView("complete-profile");
     }
-  }, [sheetUser, isInitializing]);
+  }, [sheetUser, isInitializing, profileCompleted]);
 
   const handleOpenChat = (
     taskId: bigint,
@@ -56,13 +66,24 @@ function App() {
           <HubView onNavigate={setCurrentView} onOpenChat={handleOpenChat} />
         )}
         {currentView === "profile" && (
-          <ProfileView onNavigate={setCurrentView} />
+          <ProfileView
+            onNavigate={setCurrentView}
+            showWelcomeBanner={profileJustCreated}
+            onWelcomeBannerSeen={() => setProfileJustCreated(false)}
+            forceProfileComplete={profileCompleted}
+          />
         )}
         {currentView === "chat" && (
           <DMView chatContext={chatContext} onNavigate={setCurrentView} />
         )}
         {currentView === "complete-profile" && (
-          <CompleteProfileView onComplete={() => setCurrentView("hub")} />
+          <CompleteProfileView
+            onComplete={() => {
+              setProfileCompleted(true);
+              setProfileJustCreated(true);
+              setCurrentView("profile");
+            }}
+          />
         )}
       </div>
 
