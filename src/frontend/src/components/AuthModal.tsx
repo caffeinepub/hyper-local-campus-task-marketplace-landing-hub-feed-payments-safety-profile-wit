@@ -223,20 +223,20 @@ export default function AuthModal({
 
               <Divider label="or" />
 
-              {/* Email */}
+              {/* Gmail */}
               <div className="space-y-2">
                 <Label
                   htmlFor="si-email"
                   className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
                 >
-                  Email
+                  Gmail
                 </Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <Input
                     id="si-email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="you@gmail.com"
                     value={signInEmail}
                     onChange={(e) => setSignInEmail(e.target.value)}
                     disabled={isLoading || signInGoogleLoading}
@@ -349,20 +349,20 @@ export default function AuthModal({
                 </div>
               </div>
 
-              {/* Email */}
+              {/* Gmail */}
               <div className="space-y-2">
                 <Label
                   htmlFor="su-email"
                   className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
                 >
-                  Email
+                  Gmail
                 </Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <Input
                     id="su-email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="you@gmail.com"
                     value={signUpEmail}
                     onChange={(e) => setSignUpEmail(e.target.value)}
                     disabled={isLoading || signUpGoogleLoading}
