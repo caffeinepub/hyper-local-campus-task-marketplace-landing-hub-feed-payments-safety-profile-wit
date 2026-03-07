@@ -9,6 +9,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { useInternetIdentity } from "@/hooks/useInternetIdentity";
 import { useCompleteTask, useVerifyTask } from "@/hooks/useTaskActions";
+import { logPerformerHistory, logPosterHistory } from "@/utils/sheetdb";
 import { Loader2, Star, Upload } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -98,6 +99,17 @@ export default function CompleteTaskModal({
 
       toast.success("Task verified and rated!");
       onOpenChange(false);
+
+      // Fire-and-forget: log to both history sheets
+      const today = new Date().toLocaleDateString("en-IN");
+      const taskIdStr = task.id.toString();
+      const priceStr = task.price.toString();
+      const performerStr = task.performer!.toString();
+      const creatorStr = task.creator.toString();
+      Promise.allSettled([
+        logPerformerHistory(performerStr, taskIdStr, priceStr, today),
+        logPosterHistory(creatorStr, taskIdStr, priceStr, performerStr),
+      ]).catch(() => {}); // silent
 
       // Reset state
       setPhotoFile(null);

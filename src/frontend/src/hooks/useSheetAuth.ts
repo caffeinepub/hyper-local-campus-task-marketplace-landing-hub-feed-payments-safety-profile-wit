@@ -116,14 +116,16 @@ export function useSheetAuth(): UseSheetAuthReturn {
     async (email: string, name: string): Promise<AuthResult> => {
       setIsLoading(true);
       try {
+        // findUserByEmail now searches the email_id column (D)
         let user = await findUserByEmail(email);
         let isNewUser = false;
 
         if (!user) {
           // New Google user — create an account
+          // saveUserToSheet stores: user_id (A), full_name (B), email_id (D) — no password hash
           const user_id = crypto.randomUUID();
           await saveUserToSheet(user_id, name, email);
-          user = { user_id, name, email };
+          user = { user_id, full_name: name, email_id: email, name, email };
           isNewUser = true;
         }
 
@@ -138,8 +140,8 @@ export function useSheetAuth(): UseSheetAuthReturn {
 
         const session: SheetSession = {
           user_id: user.user_id,
-          name: user.name || name,
-          email: user.email,
+          name: user.full_name || user.name || name,
+          email: user.email_id || user.email || email,
           profile_complete,
           full_name: user.full_name,
           phone_number: user.phone_number,
@@ -172,8 +174,10 @@ export function useSheetAuth(): UseSheetAuthReturn {
           );
         }
 
+        // Hash password and store in column H (pasword_hash — single 's' matches sheet header)
         const password_hash = await hashPassword(password);
         const user_id = crypto.randomUUID();
+        // saveUserToSheet writes: A=user_id, B=full_name, D=email_id, H=pasword_hash
         await saveUserToSheet(user_id, name, email, password_hash);
 
         const session: SheetSession = {
@@ -196,18 +200,20 @@ export function useSheetAuth(): UseSheetAuthReturn {
     async (email: string, password: string): Promise<AuthResult> => {
       setIsLoading(true);
       try {
+        // Searches by email_id column (D)
         const user = await findUserByEmail(email);
         if (!user) {
           throw new Error("No account found with this email. Please sign up.");
         }
-        if (!user.password_hash) {
+        // pasword_hash is column H (single 's')
+        if (!user.pasword_hash) {
           throw new Error(
             "This account was created with Google. Please use Google Sign-In.",
           );
         }
 
         const inputHash = await hashPassword(password);
-        if (inputHash !== user.password_hash) {
+        if (inputHash !== user.pasword_hash) {
           throw new Error("Incorrect password. Please try again.");
         }
 
@@ -220,8 +226,8 @@ export function useSheetAuth(): UseSheetAuthReturn {
 
         const session: SheetSession = {
           user_id: user.user_id,
-          name: user.name,
-          email: user.email,
+          name: user.full_name || user.name || email,
+          email: user.email_id || user.email || email,
           profile_complete,
           full_name: user.full_name,
           phone_number: user.phone_number,
@@ -247,6 +253,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
       student_id: string,
       upi_id: string,
     ): Promise<void> => {
+      // updateUserProfile patches: B=full_name, C=phone_number, E=student_id, F=upi_id
       await updateUserProfile(user_id, {
         full_name,
         phone_number,
@@ -273,11 +280,13 @@ export function useSheetAuth(): UseSheetAuthReturn {
   );
 
   const checkUsernameAvailable = useCallback(
-    async (username: string): Promise<boolean> => {
-      if (!username.trim()) return false;
-      const existing = await findUserByUsername(username.trim().toLowerCase());
+    async (handle: string): Promise<boolean> => {
+      if (!handle.trim()) return false;
+      const normalised = handle.trim().toLowerCase();
+      // findUserByUsername searches by the user_id column
+      const existing = await findUserByUsername(normalised);
       if (!existing) return true;
-      // Allow if the username belongs to the current user
+      // Allow if the found row already belongs to the current user
       const session = readSession();
       return existing.user_id === session?.user_id;
     },
@@ -285,12 +294,18 @@ export function useSheetAuth(): UseSheetAuthReturn {
   );
 
   const saveUsername = useCallback(
-    async (user_id: string, username: string): Promise<void> => {
-      const normalised = username.trim().toLowerCase();
+    async (user_id: string, new_handle: string): Promise<void> => {
+      const normalised = new_handle.trim().toLowerCase();
+      // updateUsername patches the user_id column value from user_id -> normalised
       await updateUsername(user_id, normalised);
       setCurrentUser((prev) => {
         if (!prev) return prev;
-        const updated: SheetSession = { ...prev, username: normalised };
+        // The user_id column now holds the new handle, so update session accordingly
+        const updated: SheetSession = {
+          ...prev,
+          user_id: normalised,
+          username: normalised,
+        };
         persistSession(updated);
         return updated;
       });

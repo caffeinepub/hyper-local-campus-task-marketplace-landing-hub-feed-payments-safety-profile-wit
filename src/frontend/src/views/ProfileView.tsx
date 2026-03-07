@@ -16,13 +16,16 @@ import {
   useSaveCallerUserProfile,
 } from "@/hooks/useProfile";
 import { useSheetAuth } from "@/hooks/useSheetAuth";
+import { usePerformerHistory, usePosterHistory } from "@/hooks/useTaskHistory";
 import { useUserPostHistory } from "@/hooks/useTasks";
 import {
   AlertCircle,
   ArrowLeft,
   AtSign,
   CheckCircle,
+  CheckSquare,
   ChevronRight,
+  ClipboardList,
   CreditCard,
   DollarSign,
   FileText,
@@ -160,9 +163,15 @@ export default function ProfileView({
   const userPrincipal = identity?.getPrincipal() || null;
   const principalStr = identity?.getPrincipal().toString() ?? "";
 
-  // Fetch user's post history
+  // Fetch user's post history (ICP users)
   const { data: postHistory, isLoading: postHistoryLoading } =
     useUserPostHistory(userPrincipal);
+
+  // Fetch SheetDB history for performer and poster tabs
+  const { data: performerHistory = [], isLoading: performerHistoryLoading } =
+    usePerformerHistory(sheetUser?.user_id);
+  const { data: posterHistory = [], isLoading: posterHistoryLoading } =
+    usePosterHistory(sheetUser?.user_id);
 
   const averageRating =
     profile && profile.ratingCount > 0n
@@ -358,11 +367,12 @@ export default function ProfileView({
   };
 
   const handleOpenEditUsername = () => {
-    const existing = sheetUser?.username || "";
+    // The editable handle IS the user_id column value
+    const existing = sheetUser?.user_id || "";
     setEditUsername(existing);
     setIsEditingUsername(true);
 
-    // Pre-check the existing username so the save button is ready to use
+    // Pre-check the existing user_id so the save button is ready to use
     if (existing && existing.length >= 3) {
       setUsernameStatus("checking");
       const checkId = ++usernameCheckCountRef.current;
@@ -1193,15 +1203,9 @@ export default function ProfileView({
                     <p className="text-xs font-medium text-muted-foreground mb-0.5">
                       User ID
                     </p>
-                    {sheetUser.username ? (
-                      <p className="text-sm font-semibold text-[oklch(0.8_0.25_150)] break-all">
-                        @{sheetUser.username}
-                      </p>
-                    ) : (
-                      <p className="text-xs font-mono text-foreground/80 break-all select-all">
-                        {sheetUser.user_id}
-                      </p>
-                    )}
+                    <p className="text-sm font-semibold text-[oklch(0.8_0.25_150)] break-all">
+                      @{sheetUser.user_id}
+                    </p>
                   </div>
                   <Button
                     onClick={handleOpenEditUsername}
@@ -1429,14 +1433,139 @@ export default function ProfileView({
           </Card>
         )}
 
-        {/* Welcome card for SheetDB-only users */}
+        {/* ── Tasks I've Done (performer_history) — SheetDB users ── */}
         {sheetUser && (
-          <Card className="backdrop-blur-xl bg-card/30 border-[oklch(0.8_0.25_150)]/30">
-            <CardContent className="pt-5 pb-5">
-              <p className="text-sm text-muted-foreground text-center">
-                🎉 Welcome to PROXIIS! Browse tasks in the Hub and start earning
-                today.
-              </p>
+          <Card
+            className="backdrop-blur-xl bg-card/30 border-[oklch(0.8_0.25_150)]/30"
+            data-ocid="dashboard.performer-history.card"
+          >
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <CheckSquare className="w-4 h-4 text-[oklch(0.8_0.25_150)]" />
+                Tasks I've Done
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {performerHistoryLoading ? (
+                <div
+                  className="space-y-2"
+                  data-ocid="dashboard.performer-history.loading_state"
+                >
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                </div>
+              ) : performerHistory.length === 0 ? (
+                <div
+                  className="text-center py-6 space-y-1.5"
+                  data-ocid="dashboard.performer-history.empty_state"
+                >
+                  <CheckSquare className="w-10 h-10 text-muted-foreground mx-auto opacity-30" />
+                  <p className="text-sm text-muted-foreground">
+                    No completed tasks yet. Start accepting tasks in the Hub!
+                  </p>
+                </div>
+              ) : (
+                <div
+                  className="space-y-2"
+                  data-ocid="dashboard.performer-history.list"
+                >
+                  {performerHistory.map((row, index) => (
+                    <div
+                      key={`ph-${row.task_id}-${row.date}-${index}`}
+                      className="flex items-center justify-between rounded-xl border border-border/40 bg-background/40 px-3 py-2.5 gap-3"
+                      data-ocid={`dashboard.performer-history.item.${index + 1}`}
+                    >
+                      <div className="min-w-0">
+                        <p className="text-xs font-mono text-muted-foreground truncate">
+                          #{row.task_id.substring(0, 8)}
+                          {row.task_id.length > 8 ? "…" : ""}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {row.date}
+                        </p>
+                      </div>
+                      <span
+                        className="text-sm font-bold shrink-0"
+                        style={{ color: "oklch(0.8 0.25 150)" }}
+                      >
+                        ₹{row.amount}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── Tasks I've Posted (poster_history) — SheetDB users ── */}
+        {sheetUser && (
+          <Card
+            className="backdrop-blur-xl bg-card/30 border-[oklch(0.7_0.2_270)]/30"
+            data-ocid="dashboard.poster-history.card"
+          >
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ClipboardList className="w-4 h-4 text-[oklch(0.7_0.2_270)]" />
+                Tasks I've Posted
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {posterHistoryLoading ? (
+                <div
+                  className="space-y-2"
+                  data-ocid="dashboard.poster-history.loading_state"
+                >
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                </div>
+              ) : posterHistory.length === 0 ? (
+                <div
+                  className="text-center py-6 space-y-1.5"
+                  data-ocid="dashboard.poster-history.empty_state"
+                >
+                  <ClipboardList className="w-10 h-10 text-muted-foreground mx-auto opacity-30" />
+                  <p className="text-sm text-muted-foreground">
+                    No posted tasks yet. Post a task in the Hub to get started!
+                  </p>
+                </div>
+              ) : (
+                <div
+                  className="space-y-2"
+                  data-ocid="dashboard.poster-history.list"
+                >
+                  {posterHistory.map((row, index) => (
+                    <div
+                      key={`psh-${row.task_id}-${row.performer_name}-${index}`}
+                      className="flex items-center justify-between rounded-xl border border-border/40 bg-background/40 px-3 py-2.5 gap-3"
+                      data-ocid={`dashboard.poster-history.item.${index + 1}`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-mono text-muted-foreground truncate">
+                          #{row.task_id.substring(0, 8)}
+                          {row.task_id.length > 8 ? "…" : ""}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                          Performer:{" "}
+                          <span className="text-foreground/70 font-medium">
+                            {row.performer_name.length > 16
+                              ? `${row.performer_name.substring(0, 16)}…`
+                              : row.performer_name}
+                          </span>
+                        </p>
+                      </div>
+                      <span
+                        className="text-sm font-bold shrink-0"
+                        style={{ color: "oklch(0.7 0.2 270)" }}
+                      >
+                        ₹{row.amount_paid}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
