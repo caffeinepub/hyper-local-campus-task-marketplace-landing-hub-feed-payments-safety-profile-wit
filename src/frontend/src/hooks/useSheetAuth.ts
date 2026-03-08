@@ -297,6 +297,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
         const updated: SheetSession = {
           ...prev,
           full_name,
+          name: full_name,
           phone_number,
           student_id,
           upi_id,
