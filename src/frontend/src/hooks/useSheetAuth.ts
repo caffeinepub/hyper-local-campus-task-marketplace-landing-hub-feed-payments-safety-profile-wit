@@ -31,12 +31,14 @@ interface UseSheetAuthReturn {
   isLoading: boolean;
   isInitializing: boolean;
   loginWithGoogle: (email: string, name: string) => Promise<AuthResult>;
+  /** username is stored as user_id (column A). email → email_id (col D). password → pasword_hash (col H). */
   signUpWithEmail: (
-    name: string,
+    username: string,
     email: string,
     password: string,
   ) => Promise<AuthResult>;
-  loginWithEmail: (email: string, password: string) => Promise<AuthResult>;
+  /** Login by username (user_id column) + password. */
+  loginWithEmail: (username: string, password: string) => Promise<AuthResult>;
   logout: () => void;
   saveProfileDetails: (
     user_id: string,
@@ -161,30 +163,55 @@ export function useSheetAuth(): UseSheetAuthReturn {
 
   const signUpWithEmail = useCallback(
     async (
-      name: string,
+      username: string,
       email: string,
       password: string,
     ): Promise<AuthResult> => {
       setIsLoading(true);
       try {
-        const existing = await findUserByEmail(email);
-        if (existing) {
+        // Validate username format
+        const cleanUsername = username.trim().toLowerCase();
+        if (cleanUsername.length < 3) {
+          throw new Error("Username must be at least 3 characters.");
+        }
+        if (!/^[a-z0-9_-]+$/.test(cleanUsername)) {
           throw new Error(
-            "An account with this email already exists. Please log in.",
+            "Username can only contain letters, numbers, _ or -.",
           );
         }
 
-        // Hash password and store in column H (pasword_hash — single 's' matches sheet header)
+        // Check username is not already taken (user_id column A)
+        const existingByUsername = await findUserByUsername(cleanUsername);
+        if (existingByUsername) {
+          throw new Error(
+            "That username is already taken. Please choose another.",
+          );
+        }
+
+        // Check email is not already registered
+        const existingByEmail = await findUserByEmail(email.trim());
+        if (existingByEmail) {
+          throw new Error(
+            "An account with this Gmail already exists. Please log in.",
+          );
+        }
+
+        // Hash password → pasword_hash (col H — single 's' matches sheet header exactly)
         const password_hash = await hashPassword(password);
-        const user_id = crypto.randomUUID();
-        // saveUserToSheet writes: A=user_id, B=full_name, D=email_id, H=pasword_hash
-        await saveUserToSheet(user_id, name, email, password_hash);
+        // saveUserToSheet: A=username (user_id), B=username (full_name placeholder), D=email_id, H=pasword_hash
+        await saveUserToSheet(
+          cleanUsername,
+          cleanUsername,
+          email.trim(),
+          password_hash,
+        );
 
         const session: SheetSession = {
-          user_id,
-          name,
-          email,
+          user_id: cleanUsername,
+          name: cleanUsername,
+          email: email.trim(),
           profile_complete: false,
+          username: cleanUsername,
         };
         persistSession(session);
         setCurrentUser(session);
@@ -197,15 +224,18 @@ export function useSheetAuth(): UseSheetAuthReturn {
   );
 
   const loginWithEmail = useCallback(
-    async (email: string, password: string): Promise<AuthResult> => {
+    async (username: string, password: string): Promise<AuthResult> => {
       setIsLoading(true);
       try {
-        // Searches by email_id column (D)
-        const user = await findUserByEmail(email);
+        const cleanUsername = username.trim().toLowerCase();
+        // Look up by user_id column (A) — that's where usernames are stored
+        const user = await findUserByUsername(cleanUsername);
         if (!user) {
-          throw new Error("No account found with this email. Please sign up.");
+          throw new Error(
+            "No account found with that username. Please sign up.",
+          );
         }
-        // pasword_hash is column H (single 's')
+        // pasword_hash is column H (single 's' — matches sheet header exactly)
         if (!user.pasword_hash) {
           throw new Error(
             "This account was created with Google. Please use Google Sign-In.",
@@ -226,14 +256,14 @@ export function useSheetAuth(): UseSheetAuthReturn {
 
         const session: SheetSession = {
           user_id: user.user_id,
-          name: user.full_name || user.name || email,
-          email: user.email_id || user.email || email,
+          name: user.full_name || user.name || cleanUsername,
+          email: user.email_id || user.email || "",
           profile_complete,
           full_name: user.full_name,
           phone_number: user.phone_number,
           student_id: user.student_id,
           upi_id: user.upi_id,
-          username: user.username,
+          username: user.user_id,
         };
         persistSession(session);
         setCurrentUser(session);

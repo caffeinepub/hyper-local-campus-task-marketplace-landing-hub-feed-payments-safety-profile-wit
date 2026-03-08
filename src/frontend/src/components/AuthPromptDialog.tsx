@@ -161,7 +161,7 @@ export default function AuthPromptDialog({
                 : "Sign in with Google"}
             </Button>
 
-            {/* Gmail / Password */}
+            {/* Email / Password */}
             <Button
               variant="outline"
               size="lg"
@@ -171,7 +171,7 @@ export default function AuthPromptDialog({
               data-ocid="auth.secondary_button"
             >
               <Mail className="w-5 h-5" />
-              Gmail / Password
+              Email / Password
             </Button>
 
             {/* Divider */}

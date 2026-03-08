@@ -560,7 +560,7 @@ export default function ProfileView({
                   : "Sign in with Google"}
               </Button>
 
-              {/* Gmail / Password */}
+              {/* Username / Password */}
               <Button
                 variant="outline"
                 className="w-full border-border/60 hover:border-[oklch(0.7_0.2_270)]/50 gap-2 font-semibold"
@@ -570,8 +570,8 @@ export default function ProfileView({
                 }}
                 data-ocid="profile.secondary_button"
               >
-                <Mail className="w-4 h-4" />
-                Gmail / Password
+                <User className="w-4 h-4" />
+                Username / Password
               </Button>
 
               {/* Divider */}

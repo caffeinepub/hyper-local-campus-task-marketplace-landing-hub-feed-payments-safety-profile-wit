@@ -42,15 +42,15 @@ export default function AuthModal({
   const { loginWithGoogle, signUpWithEmail, loginWithEmail, isLoading } =
     useSheetAuth();
 
-  // Sign-in state
-  const [signInEmail, setSignInEmail] = useState("");
+  // Sign-in state (login by username + password)
+  const [signInUsername, setSignInUsername] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
   const [signInShowPwd, setSignInShowPwd] = useState(false);
   const [signInError, setSignInError] = useState("");
   const [signInGoogleLoading, setSignInGoogleLoading] = useState(false);
 
-  // Sign-up state
-  const [signUpName, setSignUpName] = useState("");
+  // Sign-up state (username replaces full name; email = gmail)
+  const [signUpUsername, setSignUpUsername] = useState("");
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
   const [signUpConfirm, setSignUpConfirm] = useState("");
@@ -62,10 +62,10 @@ export default function AuthModal({
   const handleClose = (isOpen: boolean) => {
     if (!isOpen) {
       // Reset all state
-      setSignInEmail("");
+      setSignInUsername("");
       setSignInPassword("");
       setSignInError("");
-      setSignUpName("");
+      setSignUpUsername("");
       setSignUpEmail("");
       setSignUpPassword("");
       setSignUpConfirm("");
@@ -109,15 +109,18 @@ export default function AuthModal({
     }
   };
 
-  // ── Email login ───────────────────────────────────────────────────────
+  // ── Username + Password login ──────────────────────────────────────────
   const handleEmailSignIn = async () => {
     setSignInError("");
-    if (!signInEmail.trim() || !signInPassword.trim()) {
-      setSignInError("Please enter your email and password.");
+    if (!signInUsername.trim() || !signInPassword.trim()) {
+      setSignInError("Please enter your username and password.");
       return;
     }
     try {
-      const result = await loginWithEmail(signInEmail.trim(), signInPassword);
+      const result = await loginWithEmail(
+        signInUsername.trim(),
+        signInPassword,
+      );
       toast.success("Logged in successfully!");
       onOpenChange(false);
       if (!result.profile_complete) {
@@ -130,11 +133,11 @@ export default function AuthModal({
     }
   };
 
-  // ── Email sign-up ─────────────────────────────────────────────────────
+  // ── Username + Password sign-up ───────────────────────────────────────
   const handleEmailSignUp = async () => {
     setSignUpError("");
     if (
-      !signUpName.trim() ||
+      !signUpUsername.trim() ||
       !signUpEmail.trim() ||
       !signUpPassword ||
       !signUpConfirm
@@ -152,7 +155,7 @@ export default function AuthModal({
     }
     try {
       const result = await signUpWithEmail(
-        signUpName.trim(),
+        signUpUsername.trim(),
         signUpEmail.trim(),
         signUpPassword,
       );
@@ -223,25 +226,31 @@ export default function AuthModal({
 
               <Divider label="or" />
 
-              {/* Gmail */}
+              {/* Username */}
               <div className="space-y-2">
                 <Label
-                  htmlFor="si-email"
+                  htmlFor="si-username"
                   className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
                 >
-                  Gmail
+                  Username
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <Input
-                    id="si-email"
-                    type="email"
-                    placeholder="you@gmail.com"
-                    value={signInEmail}
-                    onChange={(e) => setSignInEmail(e.target.value)}
+                    id="si-username"
+                    type="text"
+                    placeholder="your_username"
+                    value={signInUsername}
+                    onChange={(e) =>
+                      setSignInUsername(
+                        e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9_-]/g, ""),
+                      )
+                    }
                     disabled={isLoading || signInGoogleLoading}
                     className="bg-background/60 pl-9"
-                    autoComplete="email"
+                    autoComplete="username"
                     onKeyDown={(e) => e.key === "Enter" && handleEmailSignIn()}
                     data-ocid="auth.input"
                   />
@@ -325,25 +334,31 @@ export default function AuthModal({
 
               <Divider label="or" />
 
-              {/* Full Name */}
+              {/* Username */}
               <div className="space-y-2">
                 <Label
-                  htmlFor="su-name"
+                  htmlFor="su-username"
                   className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
                 >
-                  Full Name
+                  Choose a Username
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <Input
-                    id="su-name"
+                    id="su-username"
                     type="text"
-                    placeholder="Your full name"
-                    value={signUpName}
-                    onChange={(e) => setSignUpName(e.target.value)}
+                    placeholder="your_username (min 3 chars)"
+                    value={signUpUsername}
+                    onChange={(e) =>
+                      setSignUpUsername(
+                        e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9_-]/g, ""),
+                      )
+                    }
                     disabled={isLoading || signUpGoogleLoading}
                     className="bg-background/60 pl-9"
-                    autoComplete="name"
+                    autoComplete="username"
                     data-ocid="auth.input"
                   />
                 </div>
@@ -362,7 +377,7 @@ export default function AuthModal({
                   <Input
                     id="su-email"
                     type="email"
-                    placeholder="you@gmail.com"
+                    placeholder="yourname@gmail.com"
                     value={signUpEmail}
                     onChange={(e) => setSignUpEmail(e.target.value)}
                     disabled={isLoading || signUpGoogleLoading}

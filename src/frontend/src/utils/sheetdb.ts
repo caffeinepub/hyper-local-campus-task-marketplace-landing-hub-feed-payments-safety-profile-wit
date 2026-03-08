@@ -26,6 +26,9 @@ export interface SheetUser {
 /**
  * Save a user record to the users sheet.
  * Column order: A=user_id, B=full_name, C=phone_number, D=email_id, E=student_id, F=upi_id, H=pasword_hash
+ * - user_id (A): the chosen username for email sign-ups, or a UUID for Google sign-ins
+ * - email_id (D): the user's gmail address
+ * - pasword_hash (H): SHA-256 hash of the password (email sign-ups only)
  * Omits pasword_hash if not provided (Google sign-in users).
  */
 export async function saveUserToSheet(
@@ -35,7 +38,7 @@ export async function saveUserToSheet(
   password_hash?: string,
 ): Promise<void> {
   const record: Record<string, string> = {
-    user_id,
+    user_id, // column A — username chosen by user (email sign-up) or UUID (Google)
     full_name: name, // column B
     email_id: email, // column D
   };
