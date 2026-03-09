@@ -2,8 +2,8 @@
 // Base URL: https://sheetdb.io/api/v1/xslj9jybiwh8t
 //
 // Sheet column mapping (users tab):
-//   A: user_id | B: full_name | C: phone_number | D: email_id
-//   E: student_id | F: upi_id | H: pasword_hash  (note: one 's' - matches sheet header exactly)
+//   A: user_id | B: full_name | C: phone_number | D: upi_id
+//   E: email_id | F: student_id | H: pasword_hash  (note: one 's' - matches sheet header exactly)
 
 const SHEETDB_BASE = "https://sheetdb.io/api/v1/xslj9jybiwh8t";
 const USERS_SHEET_POST = `${SHEETDB_BASE}?sheet=users`;
@@ -13,10 +13,10 @@ export interface SheetUser {
   user_id: string;
   full_name: string;
   phone_number?: string;
-  email_id: string;
-  student_id?: string;
-  upi_id?: string;
-  pasword_hash?: string; // matches sheet header exactly (single 's')
+  upi_id?: string; // column D
+  email_id: string; // column E
+  student_id?: string; // column F
+  pasword_hash?: string; // column H (single 's' — matches sheet header exactly)
   // Kept for backwards-compat within the session layer
   name?: string;
   email?: string;
@@ -25,9 +25,9 @@ export interface SheetUser {
 
 /**
  * Save a user record to the users sheet.
- * Column order: A=user_id, B=full_name, C=phone_number, D=email_id, E=student_id, F=upi_id, H=pasword_hash
+ * Column order: A=user_id, B=full_name, C=phone_number, D=upi_id, E=email_id, F=student_id, H=pasword_hash
  * - user_id (A): the chosen username for email sign-ups, or a UUID for Google sign-ins
- * - email_id (D): the user's gmail address
+ * - email_id (E): the user's gmail address
  * - pasword_hash (H): SHA-256 hash of the password (email sign-ups only)
  * Omits pasword_hash if not provided (Google sign-in users).
  */
@@ -40,7 +40,7 @@ export async function saveUserToSheet(
   const record: Record<string, string> = {
     user_id, // column A — username chosen by user (email sign-up) or UUID (Google)
     full_name: name, // column B
-    email_id: email, // column D
+    email_id: email, // column E
   };
   if (password_hash) {
     record.pasword_hash = password_hash; // column H — single 's' matches sheet header
@@ -59,7 +59,7 @@ export async function saveUserToSheet(
 }
 
 /**
- * Find a user by email_id (column D) in the users sheet.
+ * Find a user by email_id (column E) in the users sheet.
  * Returns null if not found or on network failure.
  */
 export async function findUserByEmail(
@@ -138,7 +138,8 @@ export async function updateUsername(
 
 /**
  * PATCH user profile fields by user_id.
- * Maps to sheet columns: B=full_name, C=phone_number, E=student_id, F=upi_id
+ * Maps to sheet columns:
+ *   B=full_name, C=phone_number, D=upi_id, E=email_id, F=student_id
  * A 404 is treated as a warning (row not yet written) rather than a fatal error.
  */
 export async function updateUserProfile(
@@ -146,8 +147,9 @@ export async function updateUserProfile(
   data: {
     full_name?: string;
     phone_number?: string;
-    student_id?: string;
-    upi_id?: string; // column F
+    upi_id?: string; // column D
+    email_id?: string; // column E
+    student_id?: string; // column F
   },
 ): Promise<void> {
   const url = `${SHEETDB_BASE}/user_id/${encodeURIComponent(user_id)}?sheet=users`;
@@ -276,7 +278,7 @@ export async function getPosterHistory(
 
 /** Normalise a raw SheetDB row to SheetUser, handling both old and new column names. */
 function rowToSheetUser(row: Record<string, string>): SheetUser {
-  // email_id is the canonical column (D); fall back to legacy 'email' if present
+  // email_id is column E; fall back to legacy 'email' if present
   const email_id = row.email_id ?? row.email ?? "";
   // full_name is column B; fall back to legacy 'name'
   const full_name = row.full_name ?? row.name ?? "";
@@ -288,8 +290,8 @@ function rowToSheetUser(row: Record<string, string>): SheetUser {
     full_name,
     email_id,
     phone_number: row.phone_number || undefined,
-    student_id: row.student_id || undefined,
-    upi_id: row.upi_id || undefined,
+    upi_id: row.upi_id || undefined, // column D
+    student_id: row.student_id || undefined, // column F
     pasword_hash,
     // Keep aliases for compatibility with session layer
     name: full_name,

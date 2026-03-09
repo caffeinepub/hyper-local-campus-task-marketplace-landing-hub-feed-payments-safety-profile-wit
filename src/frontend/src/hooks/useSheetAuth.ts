@@ -1,6 +1,7 @@
 import {
   findUserByEmail,
   findUserByUsername,
+  getUserById,
   saveUserToSheet,
   updateUserProfile,
   updateUsername,
@@ -13,11 +14,12 @@ export interface SheetSession {
   user_id: string;
   name: string;
   email: string;
+  email_id?: string;
   profile_complete?: boolean;
   full_name?: string;
   phone_number?: string;
-  student_id?: string;
-  upi_id?: string;
+  upi_id?: string; // column D
+  student_id?: string; // column F
   username?: string;
 }
 
@@ -31,7 +33,7 @@ interface UseSheetAuthReturn {
   isLoading: boolean;
   isInitializing: boolean;
   loginWithGoogle: (email: string, name: string) => Promise<AuthResult>;
-  /** username is stored as user_id (column A). email → email_id (col D). password → pasword_hash (col H). */
+  /** username is stored as user_id (column A). email → email_id (col E). password → pasword_hash (col H). */
   signUpWithEmail: (
     username: string,
     email: string,
@@ -44,11 +46,13 @@ interface UseSheetAuthReturn {
     user_id: string,
     full_name: string,
     phone_number: string,
+    email_id: string,
     student_id: string,
     upi_id: string,
   ) => Promise<void>;
   checkUsernameAvailable: (username: string) => Promise<boolean>;
   saveUsername: (user_id: string, username: string) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 async function hashPassword(password: string): Promise<string> {
@@ -73,11 +77,41 @@ function readSession(): SheetSession | null {
     const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed?.user_id && parsed?.email) return parsed as SheetSession;
+    // user_id is the minimum required field
+    if (parsed?.user_id) return parsed as SheetSession;
     return null;
   } catch {
     return null;
   }
+}
+
+/** Build a full session object from a SheetUser row. */
+function buildSession(
+  user: {
+    user_id: string;
+    full_name?: string;
+    name?: string;
+    email_id?: string;
+    email?: string;
+    phone_number?: string;
+    upi_id?: string;
+    student_id?: string;
+    username?: string;
+  },
+  profile_complete: boolean,
+): SheetSession {
+  return {
+    user_id: user.user_id,
+    name: user.full_name || user.name || user.user_id,
+    email: user.email_id || user.email || "",
+    email_id: user.email_id || user.email || "",
+    profile_complete,
+    full_name: user.full_name || user.name || "",
+    phone_number: user.phone_number || "",
+    upi_id: user.upi_id || "",
+    student_id: user.student_id || "",
+    username: user.username || user.user_id,
+  };
 }
 
 export function useSheetAuth(): UseSheetAuthReturn {
@@ -85,11 +119,36 @@ export function useSheetAuth(): UseSheetAuthReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Restore session on mount and listen for cross-instance updates
+  // Restore session on mount, then re-fetch the row from SheetDB to get fresh data
   useEffect(() => {
     const session = readSession();
-    if (session) setCurrentUser(session);
-    setIsInitializing(false);
+    if (session) {
+      setCurrentUser(session);
+      // Re-fetch fresh data from the sheet in the background
+      getUserById(session.user_id)
+        .then((freshUser) => {
+          if (!freshUser) return;
+          const profile_complete = !!(
+            freshUser.full_name &&
+            freshUser.phone_number &&
+            freshUser.student_id &&
+            freshUser.upi_id
+          );
+          const updated = buildSession(freshUser, profile_complete);
+          // Preserve the existing profile_complete flag from session if already true
+          if (session.profile_complete) updated.profile_complete = true;
+          persistSession(updated);
+          setCurrentUser(updated);
+        })
+        .catch(() => {
+          // Network failure — silently keep the cached session
+        })
+        .finally(() => {
+          setIsInitializing(false);
+        });
+    } else {
+      setIsInitializing(false);
+    }
 
     // Re-sync when another hook instance writes to localStorage (cross-tab)
     const handleStorageChange = () => {
@@ -114,22 +173,51 @@ export function useSheetAuth(): UseSheetAuthReturn {
     };
   }, []);
 
+  /** Manually re-fetch the current user's row and update the session. */
+  const refreshProfile = useCallback(async (): Promise<void> => {
+    const session = readSession();
+    if (!session?.user_id) return;
+    const freshUser = await getUserById(session.user_id);
+    if (!freshUser) return;
+    const profile_complete = !!(
+      freshUser.full_name &&
+      freshUser.phone_number &&
+      freshUser.student_id &&
+      freshUser.upi_id
+    );
+    const updated = buildSession(
+      freshUser,
+      profile_complete || !!session.profile_complete,
+    );
+    persistSession(updated);
+    setCurrentUser(updated);
+  }, []);
+
   const loginWithGoogle = useCallback(
     async (email: string, name: string): Promise<AuthResult> => {
       setIsLoading(true);
       try {
-        // findUserByEmail now searches the email_id column (D)
-        let user = await findUserByEmail(email);
+        // findUserByEmail now searches the email_id column (E)
+        let existingUser = await findUserByEmail(email);
         let isNewUser = false;
 
-        if (!user) {
+        if (!existingUser) {
           // New Google user — create an account
-          // saveUserToSheet stores: user_id (A), full_name (B), email_id (D) — no password hash
           const user_id = crypto.randomUUID();
           await saveUserToSheet(user_id, name, email);
-          user = { user_id, full_name: name, email_id: email, name, email };
+          existingUser = {
+            user_id,
+            full_name: name,
+            email_id: email,
+            name,
+            email,
+          };
           isNewUser = true;
         }
+
+        // Always re-fetch from sheet to get all columns (B, C, D, E, F)
+        const freshUser = await getUserById(existingUser.user_id);
+        const user = freshUser || existingUser;
 
         const profile_complete = isNewUser
           ? false
@@ -140,17 +228,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
               user.upi_id
             );
 
-        const session: SheetSession = {
-          user_id: user.user_id,
-          name: user.full_name || user.name || name,
-          email: user.email_id || user.email || email,
-          profile_complete,
-          full_name: user.full_name,
-          phone_number: user.phone_number,
-          student_id: user.student_id,
-          upi_id: user.upi_id,
-          username: user.username,
-        };
+        const session = buildSession(user, profile_complete);
         persistSession(session);
         setCurrentUser(session);
         return { profile_complete };
@@ -198,7 +276,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
 
         // Hash password → pasword_hash (col H — single 's' matches sheet header exactly)
         const password_hash = await hashPassword(password);
-        // saveUserToSheet: A=username (user_id), B=username (full_name placeholder), D=email_id, H=pasword_hash
+        // saveUserToSheet: A=username (user_id), B=username (full_name placeholder), E=email_id, H=pasword_hash
         await saveUserToSheet(
           cleanUsername,
           cleanUsername,
@@ -210,7 +288,12 @@ export function useSheetAuth(): UseSheetAuthReturn {
           user_id: cleanUsername,
           name: cleanUsername,
           email: email.trim(),
+          email_id: email.trim(),
           profile_complete: false,
+          full_name: "",
+          phone_number: "",
+          upi_id: "",
+          student_id: "",
           username: cleanUsername,
         };
         persistSession(session);
@@ -247,24 +330,18 @@ export function useSheetAuth(): UseSheetAuthReturn {
           throw new Error("Incorrect password. Please try again.");
         }
 
+        // Re-fetch the full row to get all columns (B, C, D, E, F)
+        const freshUser = await getUserById(cleanUsername);
+        const userRow = freshUser || user;
+
         const profile_complete = !!(
-          user.full_name &&
-          user.phone_number &&
-          user.student_id &&
-          user.upi_id
+          userRow.full_name &&
+          userRow.phone_number &&
+          userRow.student_id &&
+          userRow.upi_id
         );
 
-        const session: SheetSession = {
-          user_id: user.user_id,
-          name: user.full_name || user.name || cleanUsername,
-          email: user.email_id || user.email || "",
-          profile_complete,
-          full_name: user.full_name,
-          phone_number: user.phone_number,
-          student_id: user.student_id,
-          upi_id: user.upi_id,
-          username: user.user_id,
-        };
+        const session = buildSession(userRow, profile_complete);
         persistSession(session);
         setCurrentUser(session);
         return { profile_complete };
@@ -280,15 +357,18 @@ export function useSheetAuth(): UseSheetAuthReturn {
       user_id: string,
       full_name: string,
       phone_number: string,
+      email_id: string,
       student_id: string,
       upi_id: string,
     ): Promise<void> => {
-      // updateUserProfile patches: B=full_name, C=phone_number, E=student_id, F=upi_id
+      // updateUserProfile patches:
+      //   B=full_name, C=phone_number, D=upi_id, E=email_id, F=student_id
       await updateUserProfile(user_id, {
         full_name,
         phone_number,
-        student_id,
         upi_id,
+        email_id,
+        student_id,
       });
 
       // Update session in state and localStorage
@@ -299,6 +379,8 @@ export function useSheetAuth(): UseSheetAuthReturn {
           full_name,
           name: full_name,
           phone_number,
+          email: email_id,
+          email_id,
           student_id,
           upi_id,
           profile_complete: true,
@@ -360,5 +442,6 @@ export function useSheetAuth(): UseSheetAuthReturn {
     saveProfileDetails,
     checkUsernameAvailable,
     saveUsername,
+    refreshProfile,
   };
 }

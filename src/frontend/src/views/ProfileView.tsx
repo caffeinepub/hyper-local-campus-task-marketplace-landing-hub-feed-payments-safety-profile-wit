@@ -133,6 +133,7 @@ export default function ProfileView({
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [editFullName, setEditFullName] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const [editEmail, setEditEmail] = useState("");
   const [editStudentId, setEditStudentId] = useState("");
   const [editUpiId, setEditUpiId] = useState("");
 
@@ -333,6 +334,7 @@ export default function ProfileView({
   const handleOpenEditProfile = () => {
     setEditFullName(sheetUser?.full_name || "");
     setEditPhone(sheetUser?.phone_number || "");
+    setEditEmail(sheetUser?.email_id || sheetUser?.email || "");
     setEditStudentId(sheetUser?.student_id || "");
     setEditUpiId(sheetUser?.upi_id || "");
     setIsEditingProfile(true);
@@ -354,10 +356,11 @@ export default function ProfileView({
         sheetUser.user_id,
         editFullName.trim(),
         editPhone.trim(),
+        editEmail.trim(),
         editStudentId.trim(),
         editUpiId.trim(),
       );
-      toast.success("Profile updated successfully!");
+      toast.success("Profile Updated Successfully");
       setIsEditingProfile(false);
     } catch (err: any) {
       toast.error(err?.message || "Failed to update profile");
@@ -458,7 +461,6 @@ export default function ProfileView({
 
   // Display name and email from SheetDB session or ICP profile
   const displayName = sheetUser?.name || userProfile?.name || "Profile";
-  const displayEmail = sheetUser?.email || userProfile?.gmailAddress || null;
 
   // ─── STEP: Initializing ─────────────────────────────────────────────────────
   if (sheetInitializing) {
@@ -956,30 +958,6 @@ export default function ProfileView({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {/* Name row */}
-            <div className="flex items-start gap-3">
-              <User className="w-4 h-4 text-muted-foreground mt-0.5" />
-              <div className="flex-1">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Display Name
-                </p>
-                <p className="text-sm font-medium break-all">{displayName}</p>
-              </div>
-            </div>
-
-            {/* Gmail row */}
-            <div className="flex items-start gap-3">
-              <Mail className="w-4 h-4 text-muted-foreground mt-0.5" />
-              <div className="flex-1">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Email Address
-                </p>
-                <p className="text-sm font-medium break-all">
-                  {displayEmail || "Not provided"}
-                </p>
-              </div>
-            </div>
-
             {/* Telegram row — only relevant for ICP users */}
             {!sheetUser && (
               <div className="flex items-start gap-3">
@@ -989,7 +967,7 @@ export default function ProfileView({
                     Telegram Handle
                   </p>
                   <p className="text-sm font-medium break-all">
-                    {storedTelegram || "Not provided"}
+                    {storedTelegram || ""}
                   </p>
                 </div>
               </div>
@@ -1005,7 +983,7 @@ export default function ProfileView({
                       Full Name
                     </p>
                     <p className="text-sm font-medium break-all">
-                      {sheetUser.full_name || "Not provided"}
+                      {sheetUser.full_name || ""}
                     </p>
                   </div>
                 </div>
@@ -1016,7 +994,18 @@ export default function ProfileView({
                       Phone Number
                     </p>
                     <p className="text-sm font-medium break-all">
-                      {sheetUser.phone_number || "Not provided"}
+                      {sheetUser.phone_number || ""}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Mail className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Gmail ID
+                    </p>
+                    <p className="text-sm font-medium break-all">
+                      {sheetUser.email_id || sheetUser.email || ""}
                     </p>
                   </div>
                 </div>
@@ -1027,7 +1016,7 @@ export default function ProfileView({
                       Student ID (SBU ID)
                     </p>
                     <p className="text-sm font-medium break-all">
-                      {sheetUser.student_id || "Not provided"}
+                      {sheetUser.student_id || ""}
                     </p>
                   </div>
                 </div>
@@ -1038,7 +1027,7 @@ export default function ProfileView({
                       UPI ID
                     </p>
                     <p className="text-sm font-medium break-all">
-                      {sheetUser.upi_id || "Not provided"}
+                      {sheetUser.upi_id || ""}
                     </p>
                   </div>
                 </div>
@@ -1082,6 +1071,27 @@ export default function ProfileView({
                     placeholder="+91 98765 43210"
                     value={editPhone}
                     onChange={(e) => setEditPhone(e.target.value)}
+                    disabled={isSavingProfile}
+                    className="bg-background/60 h-9 text-sm"
+                    data-ocid="complete-profile.input"
+                  />
+                </div>
+
+                {/* Gmail ID */}
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="edit-email-id"
+                    className="text-xs font-semibold flex items-center gap-1.5"
+                  >
+                    <Mail className="w-3 h-3 text-[oklch(0.8_0.25_150)]" />
+                    Gmail ID
+                  </Label>
+                  <Input
+                    id="edit-email-id"
+                    type="email"
+                    placeholder="yourname@gmail.com"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
                     disabled={isSavingProfile}
                     className="bg-background/60 h-9 text-sm"
                     data-ocid="complete-profile.input"

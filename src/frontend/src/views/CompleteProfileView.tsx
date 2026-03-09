@@ -8,6 +8,7 @@ import {
   CreditCard,
   GraduationCap,
   Loader2,
+  Mail,
   Phone,
   User,
   UserCircle2,
@@ -26,6 +27,9 @@ export default function CompleteProfileView({
 
   const [fullName, setFullName] = useState(sheetUser?.name || "");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [gmailId, setGmailId] = useState(
+    sheetUser?.email || sheetUser?.email_id || "",
+  );
   const [studentId, setStudentId] = useState("");
   const [upiId, setUpiId] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -40,6 +44,10 @@ export default function CompleteProfileView({
     }
     if (!phoneNumber.trim()) {
       setError("Phone number is required.");
+      return;
+    }
+    if (!gmailId.trim()) {
+      setError("Gmail ID is required.");
       return;
     }
     if (!studentId.trim()) {
@@ -62,10 +70,11 @@ export default function CompleteProfileView({
         sheetUser.user_id,
         fullName.trim(),
         phoneNumber.trim(),
+        gmailId.trim(),
         studentId.trim(),
         upiId.trim(),
       );
-      toast.success("Profile completed! Welcome to PROXIIS 🎉");
+      toast.success("Profile Updated Successfully");
       onComplete();
     } catch (err: any) {
       setError(err?.message || "Failed to save profile. Please try again.");
@@ -149,6 +158,30 @@ export default function CompleteProfileView({
                     disabled={isSaving}
                     className="bg-background/60 pl-9"
                     autoComplete="tel"
+                    data-ocid="complete-profile.input"
+                  />
+                </div>
+              </div>
+
+              {/* Gmail ID */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="cp-gmail"
+                  className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                >
+                  Gmail ID <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    id="cp-gmail"
+                    type="email"
+                    placeholder="yourname@gmail.com"
+                    value={gmailId}
+                    onChange={(e) => setGmailId(e.target.value)}
+                    disabled={isSaving}
+                    className="bg-background/60 pl-9"
+                    autoComplete="email"
                     data-ocid="complete-profile.input"
                   />
                 </div>
