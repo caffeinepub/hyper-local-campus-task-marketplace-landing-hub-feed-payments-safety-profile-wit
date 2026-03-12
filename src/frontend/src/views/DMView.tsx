@@ -8,7 +8,7 @@ import type { View } from "../App";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ChatContext {
-  taskId: bigint;
+  taskId: bigint | string;
   taskTitle: string;
   creatorId: string;
   viewerId: string;
@@ -34,7 +34,11 @@ interface ConversationMeta {
 
 // ─── Storage helpers ──────────────────────────────────────────────────────────
 
-function buildStorageKey(taskId: bigint, creatorId: string, viewerId: string) {
+function buildStorageKey(
+  taskId: bigint | string,
+  creatorId: string,
+  viewerId: string,
+) {
   const sorted = [creatorId, viewerId].sort().join("_");
   return `proxiis_chat_${taskId.toString()}_${sorted}`;
 }

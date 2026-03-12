@@ -2,15 +2,13 @@ import { IndianRupee, Upload, X } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ExternalBlob } from "../backend";
-import { useActor } from "../hooks/useActor";
 import { useSheetAuth } from "../hooks/useSheetAuth";
-import { useCreateTask } from "../hooks/useTasks";
-import { datetimeLocalToTime } from "../utils/time";
+import { createPostHistoryRecord, saveTaskToSheet } from "../utils/sheetdb";
 
 interface PostTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onTaskPosted?: () => void;
 }
 
 const categories = [
@@ -24,11 +22,18 @@ const categories = [
   "Other",
 ];
 
-export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
-  const { actor, isFetching: actorLoading } = useActor();
+function generateTaskId(): string {
+  const ts = Date.now().toString(36);
+  const rand = Math.random().toString(36).substring(2, 8);
+  return `task_${ts}_${rand}`;
+}
+
+export default function PostTaskModal({
+  isOpen,
+  onClose,
+  onTaskPosted,
+}: PostTaskModalProps) {
   const { currentUser: sheetUser } = useSheetAuth();
-  const createTask = useCreateTask();
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -36,12 +41,13 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
     price: "",
     location: "",
     safeSpot: "",
-    telegramHandle: "",
     deadline: "",
+    description: "",
   });
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -55,12 +61,25 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      category: categories[0],
+      price: "",
+      location: "",
+      safeSpot: "",
+      deadline: "",
+      description: "",
+    });
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // SheetDB users don't need the ICP actor to post tasks
-    if (!actor && !sheetUser) {
-      toast.error("Connection not ready. Please wait a moment and try again.");
+    if (!sheetUser) {
+      toast.error("Please log in to post a task.");
       return;
     }
 
@@ -69,51 +88,48 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      setUploadProgress(0);
-      const photoBytes = new Uint8Array(await photoFile.arrayBuffer());
-      const photoBlob = ExternalBlob.fromBytes(photoBytes).withUploadProgress(
-        (percentage) => setUploadProgress(percentage),
+      const photoDataUrl = photoPreview ?? "";
+
+      const task_id = generateTaskId();
+      const now = new Date();
+      const datePosted = now.toISOString().split("T")[0]; // YYYY-MM-DD
+
+      await saveTaskToSheet({
+        task_photo: photoDataUrl,
+        task_id,
+        user_id_originator: sheetUser.user_id,
+        task_name: formData.title,
+        price: formData.price,
+        status: "active",
+        location: `${formData.location}${formData.safeSpot ? ` | Safe spot: ${formData.safeSpot}` : ""}`,
+        description: formData.description,
+        date_posted: datePosted,
+        deadline: formData.deadline || undefined,
+        category: formData.category,
+      });
+
+      await createPostHistoryRecord(
+        sheetUser.user_id,
+        task_id,
+        formData.title,
+        datePosted,
       );
 
-      const deadline = datetimeLocalToTime(formData.deadline);
-
-      await createTask.mutateAsync({
-        title: formData.title,
-        category: formData.category,
-        price: BigInt(formData.price),
-        location: formData.location,
-        safeSpot: formData.safeSpot,
-        telegramHandle: formData.telegramHandle,
-        photo: photoBlob,
-        deadline,
-      });
-
       toast.success("Task posted successfully!");
+      resetForm();
       onClose();
-      setFormData({
-        title: "",
-        category: categories[0],
-        price: "",
-        location: "",
-        safeSpot: "",
-        telegramHandle: "",
-        deadline: "",
-      });
-      setPhotoFile(null);
-      setPhotoPreview(null);
-      setUploadProgress(0);
+      onTaskPosted?.();
     } catch (error: any) {
-      console.error("Error creating task:", error);
-      toast.error(error.message || "Failed to create task");
+      console.error("Error posting task:", error);
+      toast.error(error.message || "Failed to post task. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   if (!isOpen) return null;
-
-  const isSubmitting = createTask.isPending;
-  // SheetDB users are always "ready" — they don't depend on the ICP actor
-  const isActorReady = !!sheetUser || (!!actor && !actorLoading);
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -125,18 +141,14 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
             onClick={onClose}
             className="p-2 hover:bg-muted rounded-full transition-colors"
             disabled={isSubmitting}
+            data-ocid="post_task.close_button"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {!isActorReady && (
-            <div className="bg-muted/50 border border-border rounded-lg p-4 text-sm text-muted-foreground">
-              Initializing connection... Please wait.
-            </div>
-          )}
-
+          {/* Task Photo */}
           <div>
             <label
               htmlFor="task-photo"
@@ -159,6 +171,7 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
                       setPhotoPreview(null);
                     }}
                     className="absolute top-2 right-2 bg-destructive text-destructive-foreground p-2 rounded-full hover:bg-destructive/90"
+                    data-ocid="post_task.photo.delete_button"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -175,32 +188,21 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
                     accept="image/*"
                     onChange={handlePhotoChange}
                     className="hidden"
+                    data-ocid="post_task.photo.upload_button"
                     required
                   />
                 </label>
               )}
             </div>
-            {uploadProgress > 0 && uploadProgress < 100 && (
-              <div className="mt-2">
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground mt-1 text-center">
-                  Uploading: {uploadProgress}%
-                </p>
-              </div>
-            )}
           </div>
 
+          {/* Title */}
           <div>
             <label
               htmlFor="task-title"
               className="block text-sm font-medium mb-2"
             >
-              Title *
+              Title (Task Name) *
             </label>
             <input
               id="task-title"
@@ -210,11 +212,13 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
                 setFormData({ ...formData, title: e.target.value })
               }
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="e.g., Make database notes on behalf of me"
+              placeholder="e.g., Make notes on my behalf"
               required
+              data-ocid="post_task.title.input"
             />
           </div>
 
+          {/* Category */}
           <div>
             <label
               htmlFor="task-category"
@@ -230,6 +234,7 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
               }
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
               required
+              data-ocid="post_task.category.select"
             >
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
@@ -239,13 +244,14 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
             </select>
           </div>
 
+          {/* Price */}
           <div>
             <label
               htmlFor="task-price"
               className="flex items-center gap-1 text-sm font-medium mb-2"
             >
               <IndianRupee className="w-4 h-4" />
-              Price *
+              Price (Amount in ₹) *
             </label>
             <input
               id="task-price"
@@ -255,18 +261,20 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
                 setFormData({ ...formData, price: e.target.value })
               }
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Enter amount in rupees"
+              placeholder="Enter amount in ₹"
               min="1"
               required
+              data-ocid="post_task.price.input"
             />
           </div>
 
-          <div>
+          {/* Location & Safe Spot */}
+          <div className="space-y-3">
             <label
               htmlFor="task-location"
-              className="block text-sm font-medium mb-2"
+              className="block text-sm font-medium"
             >
-              Location *
+              Location &amp; Safe Spot *
             </label>
             <input
               id="task-location"
@@ -276,18 +284,10 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
                 setFormData({ ...formData, location: e.target.value })
               }
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="e.g., ABC university"
+              placeholder="e.g., ABC University"
               required
+              data-ocid="post_task.location.input"
             />
-          </div>
-
-          <div>
-            <label
-              htmlFor="task-safe-spot"
-              className="block text-sm font-medium mb-2"
-            >
-              Safe Spot *
-            </label>
             <input
               id="task-safe-spot"
               type="text"
@@ -296,59 +296,49 @@ export default function PostTaskModal({ isOpen, onClose }: PostTaskModalProps) {
                 setFormData({ ...formData, safeSpot: e.target.value })
               }
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="e.g., Near A1 building"
-              required
+              placeholder="Safe spot, e.g., Near A1 building"
+              data-ocid="post_task.safe_spot.input"
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="task-telegram"
-              className="block text-sm font-medium mb-2"
-            >
-              Telegram Handle *
-            </label>
-            <input
-              id="task-telegram"
-              type="text"
-              value={formData.telegramHandle}
-              onChange={(e) =>
-                setFormData({ ...formData, telegramHandle: e.target.value })
-              }
-              className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="@yourusername"
-              required
-            />
-          </div>
-
-          <div>
+          {/* Deadline & Description */}
+          <div className="space-y-3">
             <label
               htmlFor="task-deadline"
-              className="block text-sm font-medium mb-2"
+              className="block text-sm font-medium"
             >
-              Deadline (Optional)
+              Deadline &amp; Description
             </label>
             <input
               id="task-deadline"
-              type="datetime-local"
+              type="date"
               value={formData.deadline}
               onChange={(e) =>
                 setFormData({ ...formData, deadline: e.target.value })
               }
               className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+              data-ocid="post_task.deadline.input"
+            />
+            <textarea
+              id="task-description"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              placeholder="Describe the task in detail..."
+              rows={4}
+              data-ocid="post_task.description.textarea"
             />
           </div>
 
           <button
             type="submit"
-            disabled={isSubmitting || !isActorReady}
+            disabled={isSubmitting}
             className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            data-ocid="post_task.submit_button"
           >
-            {isSubmitting
-              ? "Posting Task..."
-              : !isActorReady
-                ? "Connecting..."
-                : "Post Task"}
+            {isSubmitting ? "Posting Task..." : "Post Task"}
           </button>
         </form>
       </div>

@@ -33,7 +33,7 @@ interface UseSheetAuthReturn {
   isLoading: boolean;
   isInitializing: boolean;
   loginWithGoogle: (email: string, name: string) => Promise<AuthResult>;
-  /** username is stored as user_id (column A). email → email_id (col E). password → pasword_hash (col H). */
+  /** username → user_id (col A). email → email_id (col E). password → pasword_hash (col H). */
   signUpWithEmail: (
     username: string,
     email: string,
@@ -64,7 +64,6 @@ async function hashPassword(password: string): Promise<string> {
 
 function persistSession(session: SheetSession): void {
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  // Notify all other hook instances on the same tab to re-sync
   window.dispatchEvent(new CustomEvent("proxiis_session_updated"));
 }
 
@@ -77,7 +76,6 @@ function readSession(): SheetSession | null {
     const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    // user_id is the minimum required field
     if (parsed?.user_id) return parsed as SheetSession;
     return null;
   } catch {
@@ -119,12 +117,10 @@ export function useSheetAuth(): UseSheetAuthReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Restore session on mount, then re-fetch the row from SheetDB to get fresh data
   useEffect(() => {
     const session = readSession();
     if (session) {
       setCurrentUser(session);
-      // Re-fetch fresh data from the sheet in the background
       getUserById(session.user_id)
         .then((freshUser) => {
           if (!freshUser) return;
@@ -135,14 +131,11 @@ export function useSheetAuth(): UseSheetAuthReturn {
             freshUser.upi_id
           );
           const updated = buildSession(freshUser, profile_complete);
-          // Preserve the existing profile_complete flag from session if already true
           if (session.profile_complete) updated.profile_complete = true;
           persistSession(updated);
           setCurrentUser(updated);
         })
-        .catch(() => {
-          // Network failure — silently keep the cached session
-        })
+        .catch(() => {})
         .finally(() => {
           setIsInitializing(false);
         });
@@ -150,20 +143,10 @@ export function useSheetAuth(): UseSheetAuthReturn {
       setIsInitializing(false);
     }
 
-    // Re-sync when another hook instance writes to localStorage (cross-tab)
-    const handleStorageChange = () => {
-      const updated = readSession();
-      setCurrentUser(updated);
-    };
+    const handleStorageChange = () => setCurrentUser(readSession());
+    const handleSameTabUpdate = () => setCurrentUser(readSession());
     window.addEventListener("storage", handleStorageChange);
-
-    // Re-sync when another hook instance on the same tab updates the session
-    const handleSameTabUpdate = () => {
-      const updated = readSession();
-      setCurrentUser(updated);
-    };
     window.addEventListener("proxiis_session_updated", handleSameTabUpdate);
-
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener(
@@ -173,7 +156,6 @@ export function useSheetAuth(): UseSheetAuthReturn {
     };
   }, []);
 
-  /** Manually re-fetch the current user's row and update the session. */
   const refreshProfile = useCallback(async (): Promise<void> => {
     const session = readSession();
     if (!session?.user_id) return;
@@ -193,16 +175,17 @@ export function useSheetAuth(): UseSheetAuthReturn {
     setCurrentUser(updated);
   }, []);
 
+  // ─── Google Sign-In ────────────────────────────────────────────────────────
+  // Check by email_id (col E). If row exists → login to existing account.
+  // If not → create a new row with a fresh UUID.
   const loginWithGoogle = useCallback(
     async (email: string, name: string): Promise<AuthResult> => {
       setIsLoading(true);
       try {
-        // findUserByEmail now searches the email_id column (E)
         let existingUser = await findUserByEmail(email);
         let isNewUser = false;
 
         if (!existingUser) {
-          // New Google user — create an account
           const user_id = crypto.randomUUID();
           await saveUserToSheet(user_id, name, email);
           existingUser = {
@@ -215,7 +198,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
           isNewUser = true;
         }
 
-        // Always re-fetch from sheet to get all columns (B, C, D, E, F)
+        // Re-fetch to get all columns
         const freshUser = await getUserById(existingUser.user_id);
         const user = freshUser || existingUser;
 
@@ -239,6 +222,10 @@ export function useSheetAuth(): UseSheetAuthReturn {
     [],
   );
 
+  // ─── Email/Password Sign-Up ────────────────────────────────────────────────
+  // 1. Check if email_id (col E) already exists.
+  //    YES → verify password against stored hash → log into existing account.
+  //    NO  → check username uniqueness → create new row.
   const signUpWithEmail = useCallback(
     async (
       username: string,
@@ -247,8 +234,41 @@ export function useSheetAuth(): UseSheetAuthReturn {
     ): Promise<AuthResult> => {
       setIsLoading(true);
       try {
-        // Validate username format
+        const cleanEmail = email.trim().toLowerCase();
         const cleanUsername = username.trim().toLowerCase();
+
+        // --- Step 1: Check if this Gmail already has an account (col E) ---
+        const existingByEmail = await findUserByEmail(cleanEmail);
+        if (existingByEmail) {
+          // Account already exists — treat this as a login attempt
+          if (!existingByEmail.pasword_hash) {
+            // Account was created via Google Sign-In (no password)
+            throw new Error(
+              "This Gmail is linked to a Google account. Please use Google Sign-In.",
+            );
+          }
+          const inputHash = await hashPassword(password);
+          if (inputHash !== existingByEmail.pasword_hash) {
+            throw new Error(
+              "An account with this Gmail already exists. Incorrect password — please log in instead.",
+            );
+          }
+          // Password matches → log into the existing account
+          const freshUser = await getUserById(existingByEmail.user_id);
+          const userRow = freshUser || existingByEmail;
+          const profile_complete = !!(
+            userRow.full_name &&
+            userRow.phone_number &&
+            userRow.student_id &&
+            userRow.upi_id
+          );
+          const session = buildSession(userRow, profile_complete);
+          persistSession(session);
+          setCurrentUser(session);
+          return { profile_complete };
+        }
+
+        // --- Step 2: New email — validate username ---
         if (cleanUsername.length < 3) {
           throw new Error("Username must be at least 3 characters.");
         }
@@ -257,8 +277,6 @@ export function useSheetAuth(): UseSheetAuthReturn {
             "Username can only contain letters, numbers, _ or -.",
           );
         }
-
-        // Check username is not already taken (user_id column A)
         const existingByUsername = await findUserByUsername(cleanUsername);
         if (existingByUsername) {
           throw new Error(
@@ -266,29 +284,20 @@ export function useSheetAuth(): UseSheetAuthReturn {
           );
         }
 
-        // Check email is not already registered
-        const existingByEmail = await findUserByEmail(email.trim());
-        if (existingByEmail) {
-          throw new Error(
-            "An account with this Gmail already exists. Please log in.",
-          );
-        }
-
-        // Hash password → pasword_hash (col H — single 's' matches sheet header exactly)
+        // --- Step 3: Create the new account ---
         const password_hash = await hashPassword(password);
-        // saveUserToSheet: A=username (user_id), B=username (full_name placeholder), E=email_id, H=pasword_hash
         await saveUserToSheet(
           cleanUsername,
           cleanUsername,
-          email.trim(),
+          cleanEmail,
           password_hash,
         );
 
         const session: SheetSession = {
           user_id: cleanUsername,
           name: cleanUsername,
-          email: email.trim(),
-          email_id: email.trim(),
+          email: cleanEmail,
+          email_id: cleanEmail,
           profile_complete: false,
           full_name: "",
           phone_number: "",
@@ -306,34 +315,30 @@ export function useSheetAuth(): UseSheetAuthReturn {
     [],
   );
 
+  // ─── Username/Password Login ───────────────────────────────────────────────
   const loginWithEmail = useCallback(
     async (username: string, password: string): Promise<AuthResult> => {
       setIsLoading(true);
       try {
         const cleanUsername = username.trim().toLowerCase();
-        // Look up by user_id column (A) — that's where usernames are stored
         const user = await findUserByUsername(cleanUsername);
         if (!user) {
           throw new Error(
             "No account found with that username. Please sign up.",
           );
         }
-        // pasword_hash is column H (single 's' — matches sheet header exactly)
         if (!user.pasword_hash) {
           throw new Error(
             "This account was created with Google. Please use Google Sign-In.",
           );
         }
-
         const inputHash = await hashPassword(password);
         if (inputHash !== user.pasword_hash) {
           throw new Error("Incorrect password. Please try again.");
         }
 
-        // Re-fetch the full row to get all columns (B, C, D, E, F)
         const freshUser = await getUserById(cleanUsername);
         const userRow = freshUser || user;
-
         const profile_complete = !!(
           userRow.full_name &&
           userRow.phone_number &&
@@ -352,6 +357,7 @@ export function useSheetAuth(): UseSheetAuthReturn {
     [],
   );
 
+  // ─── Profile save — always patches by user_id (col A) ─────────────────────
   const saveProfileDetails = useCallback(
     async (
       user_id: string,
@@ -361,8 +367,6 @@ export function useSheetAuth(): UseSheetAuthReturn {
       student_id: string,
       upi_id: string,
     ): Promise<void> => {
-      // updateUserProfile patches:
-      //   B=full_name, C=phone_number, D=upi_id, E=email_id, F=student_id
       await updateUserProfile(user_id, {
         full_name,
         phone_number,
@@ -371,7 +375,6 @@ export function useSheetAuth(): UseSheetAuthReturn {
         student_id,
       });
 
-      // Update session in state and localStorage
       setCurrentUser((prev) => {
         if (!prev) return prev;
         const updated: SheetSession = {
@@ -396,10 +399,8 @@ export function useSheetAuth(): UseSheetAuthReturn {
     async (handle: string): Promise<boolean> => {
       if (!handle.trim()) return false;
       const normalised = handle.trim().toLowerCase();
-      // findUserByUsername searches by the user_id column
       const existing = await findUserByUsername(normalised);
       if (!existing) return true;
-      // Allow if the found row already belongs to the current user
       const session = readSession();
       return existing.user_id === session?.user_id;
     },
@@ -409,11 +410,9 @@ export function useSheetAuth(): UseSheetAuthReturn {
   const saveUsername = useCallback(
     async (user_id: string, new_handle: string): Promise<void> => {
       const normalised = new_handle.trim().toLowerCase();
-      // updateUsername patches the user_id column value from user_id -> normalised
       await updateUsername(user_id, normalised);
       setCurrentUser((prev) => {
         if (!prev) return prev;
-        // The user_id column now holds the new handle, so update session accordingly
         const updated: SheetSession = {
           ...prev,
           user_id: normalised,

@@ -1,5 +1,7 @@
+import type { Task } from "@/backend";
 import { Button } from "@/components/ui/button";
 import { useSheetAuth } from "@/hooks/useSheetAuth";
+import type { SheetTask } from "@/utils/sheetdb";
 import { FolderOpen, Loader2, Plus } from "lucide-react";
 import React, { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -9,21 +11,34 @@ import CategorySelector from "../components/CategorySelector";
 import FilterBar, { type FilterType } from "../components/FilterBar";
 import HubTopBar from "../components/HubTopBar";
 import PostTaskModal from "../components/PostTaskModal";
+import SheetTaskCard from "../components/SheetTaskCard";
 import TaskCard from "../components/TaskCard";
 import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useGetCallerUserProfile } from "../hooks/useProfile";
+import { useInvalidateSheetTasks, useSheetTasks } from "../hooks/useSheetTasks";
 import { useGetTasks } from "../hooks/useTasks";
+
+type UnifiedTask =
+  | { kind: "icp"; data: Task }
+  | { kind: "sheet"; data: SheetTask };
 
 interface HubViewProps {
   onNavigate: (view: View) => void;
-  onOpenChat?: (taskId: bigint, taskTitle: string, creatorId: string) => void;
+  onOpenChat?: (
+    taskId: bigint | string,
+    taskTitle: string,
+    creatorId: string,
+  ) => void;
 }
 
 export default function HubView({ onNavigate, onOpenChat }: HubViewProps) {
   const { identity } = useInternetIdentity();
   const { actor, isFetching: actorLoading } = useActor();
   const { data: tasks = [], isLoading: tasksLoading } = useGetTasks();
+  const { data: sheetTasks = [], isLoading: sheetTasksLoading } =
+    useSheetTasks();
+  const invalidateSheetTasks = useInvalidateSheetTasks();
   const {
     data: userProfile,
     isLoading: _profileLoading,
@@ -40,61 +55,112 @@ export default function HubView({ onNavigate, onOpenChat }: HubViewProps) {
 
   const { currentUser: sheetUser } = useSheetAuth();
 
-  const isAuthenticated = !!identity;
+  const isAuthenticated = !!identity || !!sheetUser;
   const isActorReady = !!actor && !actorLoading;
   const hasProfile =
     sheetUser !== null ||
-    (isAuthenticated &&
+    (!!identity &&
       profileFetched &&
       userProfile !== null &&
       userProfile !== undefined);
 
   const filteredAndSortedTasks = useMemo(() => {
-    let filtered = tasks.filter((task) => {
-      const matchesSearch =
-        !searchQuery ||
-        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.location.toLowerCase().includes(searchQuery.toLowerCase());
+    // Build unified list
+    const icpUnified: UnifiedTask[] = tasks
+      .filter((task) => {
+        const matchesSearch =
+          !searchQuery ||
+          task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          task.location.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory =
+          selectedCategory === null || task.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+      })
+      .map((t) => ({ kind: "icp" as const, data: t }));
 
-      const matchesCategory =
-        selectedCategory === null || task.category === selectedCategory;
+    const sheetUnified: UnifiedTask[] = sheetTasks
+      .filter((task) => {
+        const matchesSearch =
+          !searchQuery ||
+          task.task_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (task.category ?? "")
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          task.location.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory =
+          selectedCategory === null || task.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+      })
+      .map((t) => ({ kind: "sheet" as const, data: t }));
 
-      return matchesSearch && matchesCategory;
-    });
+    const unified = [...icpUnified, ...sheetUnified];
 
-    const sorted = [...filtered].sort((a, b) => {
-      switch (sortFilter) {
-        case "newest":
-          return Number(b.id - a.id);
-        case "urgent":
-          if (!a.deadline && !b.deadline) return 0;
-          if (!a.deadline) return 1;
-          if (!b.deadline) return -1;
-          return Number(a.deadline - b.deadline);
-        case "paying":
-          return Number(b.price - a.price);
-        default:
-          return 0;
+    if (!sortFilter) return unified;
+
+    return [...unified].sort((a, b) => {
+      if (sortFilter === "newest") {
+        const tsA =
+          a.kind === "icp"
+            ? Number(a.data.id)
+            : new Date(a.data.date_posted || 0).getTime();
+        const tsB =
+          b.kind === "icp"
+            ? Number(b.data.id)
+            : new Date(b.data.date_posted || 0).getTime();
+        return tsB - tsA;
       }
-    });
 
-    return sorted;
-  }, [tasks, selectedCategory, sortFilter, searchQuery]);
+      if (sortFilter === "urgent") {
+        const dlA =
+          a.kind === "icp"
+            ? a.data.deadline
+              ? Number(a.data.deadline)
+              : null
+            : a.data.deadline
+              ? new Date(a.data.deadline).getTime()
+              : null;
+        const dlB =
+          b.kind === "icp"
+            ? b.data.deadline
+              ? Number(b.data.deadline)
+              : null
+            : b.data.deadline
+              ? new Date(b.data.deadline).getTime()
+              : null;
+        if (dlA === null && dlB === null) return 0;
+        if (dlA === null) return 1;
+        if (dlB === null) return -1;
+        return dlA - dlB;
+      }
+
+      if (sortFilter === "paying") {
+        const priceA =
+          a.kind === "icp"
+            ? Number(a.data.price)
+            : Number.parseFloat(a.data.price || "0");
+        const priceB =
+          b.kind === "icp"
+            ? Number(b.data.price)
+            : Number.parseFloat(b.data.price || "0");
+        return priceB - priceA;
+      }
+
+      return 0;
+    });
+  }, [tasks, sheetTasks, selectedCategory, sortFilter, searchQuery]);
 
   const handlePostTask = () => {
-    // SheetDB users can post tasks directly — no actor check needed
     if (sheetUser) {
       setIsPostModalOpen(true);
       return;
     }
-    if (!isAuthenticated) {
+    if (!identity) {
       setAuthPromptReason("post-task");
       setIsAuthPromptOpen(true);
       return;
     }
     if (!isActorReady) {
-      // Still booting — treat as unauthenticated and prompt login
       setAuthPromptReason("post-task");
       setIsAuthPromptOpen(true);
       return;
@@ -113,6 +179,14 @@ export default function HubView({ onNavigate, onOpenChat }: HubViewProps) {
     } else {
       setIsPostModalOpen(true);
     }
+  };
+
+  const handleOpenSheetChat = (
+    taskId: string,
+    taskTitle: string,
+    creatorId: string,
+  ) => {
+    onOpenChat?.(taskId, taskTitle, creatorId);
   };
 
   const handleNavigateToProfile = () => {
@@ -171,11 +245,11 @@ export default function HubView({ onNavigate, onOpenChat }: HubViewProps) {
   };
 
   const renderFeed = () => {
-    if (actorLoading) {
+    if (actorLoading || sheetTasksLoading) {
       return (
         <div className="col-span-full flex flex-col items-center justify-center py-24 gap-4">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[oklch(0.8_0.25_150)] border-t-transparent" />
-          <p className="text-muted-foreground">Connecting...</p>
+          <p className="text-muted-foreground">Loading tasks...</p>
         </div>
       );
     }
@@ -195,14 +269,34 @@ export default function HubView({ onNavigate, onOpenChat }: HubViewProps) {
 
     return (
       <>
-        {filteredAndSortedTasks.map((task) => (
-          <TaskCard
-            key={task.id.toString()}
-            task={task}
-            isAuthenticated={isAuthenticated}
-            onOpenChat={onOpenChat}
-          />
-        ))}
+        {filteredAndSortedTasks.map((item) => {
+          if (item.kind === "icp") {
+            return (
+              <TaskCard
+                key={`icp_${item.data.id.toString()}`}
+                task={item.data}
+                isAuthenticated={!!identity}
+                onOpenChat={
+                  onOpenChat as
+                    | ((
+                        taskId: bigint,
+                        taskTitle: string,
+                        creatorId: string,
+                      ) => void)
+                    | undefined
+                }
+              />
+            );
+          }
+          return (
+            <SheetTaskCard
+              key={`sheet_${item.data.task_id}`}
+              task={item.data}
+              isAuthenticated={isAuthenticated}
+              onOpenChat={handleOpenSheetChat}
+            />
+          );
+        })}
       </>
     );
   };
@@ -229,7 +323,7 @@ export default function HubView({ onNavigate, onOpenChat }: HubViewProps) {
       </div>
 
       {/* Guest banner — subtle, non-blocking */}
-      {!isAuthenticated && !sheetUser && !actorLoading && (
+      {!identity && !sheetUser && !actorLoading && (
         <div className="max-w-5xl mx-auto w-full px-5 pt-5">
           <div className="flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-[oklch(0.8_0.25_150)]/10 to-[oklch(0.7_0.2_270)]/10 border border-[oklch(0.8_0.25_150)]/20 px-4 py-3">
             <p className="text-sm text-muted-foreground">
@@ -264,6 +358,7 @@ export default function HubView({ onNavigate, onOpenChat }: HubViewProps) {
         onClick={handlePostTask}
         className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-2xl bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] hover:opacity-90 text-black z-40"
         size="icon"
+        data-ocid="hub.post_task.button"
       >
         <Plus className="w-8 h-8" />
       </Button>
@@ -271,6 +366,7 @@ export default function HubView({ onNavigate, onOpenChat }: HubViewProps) {
       <PostTaskModal
         isOpen={isPostModalOpen}
         onClose={() => setIsPostModalOpen(false)}
+        onTaskPosted={invalidateSheetTasks}
       />
 
       {/* Auth prompt dialog */}

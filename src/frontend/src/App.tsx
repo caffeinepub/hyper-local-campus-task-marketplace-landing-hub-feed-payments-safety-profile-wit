@@ -33,12 +33,11 @@ function App() {
   }, [sheetUser, isInitializing, profileCompleted]);
 
   const handleOpenChat = (
-    taskId: bigint,
+    taskId: bigint | string,
     taskTitle: string,
     creatorId: string,
   ) => {
-    // viewerId is a placeholder — the DMView derives it from the current user context stored in localStorage.
-    // We set it as the creatorId here; DMView will resolve identities via chatContext.
+    // viewerId is derived from creatorId here; DMView resolves via chatContext
     setChatContext({ taskId, taskTitle, creatorId, viewerId: creatorId });
     setCurrentView("chat");
   };
