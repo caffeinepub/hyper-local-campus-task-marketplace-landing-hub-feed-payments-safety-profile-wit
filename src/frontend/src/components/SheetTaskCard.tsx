@@ -96,7 +96,7 @@ export default function SheetTaskCard({
               {task.task_name}
             </h3>
 
-            {/* Location + Due Date */}
+            {/* Location + Last date (col I) */}
             <div className="space-y-0.5">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <MapPin className="w-3 h-3 flex-shrink-0 text-[oklch(0.75_0.22_200)]" />
@@ -105,7 +105,9 @@ export default function SheetTaskCard({
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <CalendarDays className="w-3 h-3 flex-shrink-0 text-[oklch(0.7_0.2_270)]" />
                 <span className="truncate">
-                  {task.deadline ? `Due ${task.deadline}` : "No due date"}
+                  {task.deadline
+                    ? `Do it by: ${task.deadline}`
+                    : "No last date set"}
                 </span>
               </div>
             </div>

@@ -157,7 +157,7 @@ export async function getUserById(user_id: string): Promise<SheetUser | null> {
 //
 // task sheet column mapping:
 //   A: task_photo | B: task_id | D: user_id_originator | F: task_name
-//   G: price | H: status | J: location | K: description
+//   G: price | H: status | I: deadline | J: location | K: description
 
 const TASK_SHEET_POST = `${SHEETDB_BASE}?sheet=task`;
 const TASK_SHEET_SEARCH = `${SHEETDB_BASE}/search?sheet=task`;
@@ -172,7 +172,7 @@ export interface SheetTask {
   location: string; // col J
   description?: string; // col K
   date_posted?: string; // extra metadata
-  deadline?: string; // deadline date string (YYYY-MM-DD)
+  deadline?: string; // col I — deadline date string (YYYY-MM-DD)
   category?: string; // task category
 }
 

@@ -21,11 +21,9 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useInternetIdentity } from "@/hooks/useInternetIdentity";
 import {
-  useAssignPerformer,
   useDeleteTask,
   useToggleTelegramDiscussion,
 } from "@/hooks/useTaskActions";
-import { buildUPILink } from "@/utils/deepLinks";
 import {
   deletePostHistoryByTaskId,
   deleteTaskFromSheet,
@@ -35,7 +33,6 @@ import { formatDeadline } from "@/utils/time";
 import {
   CheckCircle,
   Clock,
-  CreditCard,
   IndianRupee,
   MapPin,
   MapPinned,
@@ -64,7 +61,6 @@ export default function TaskDetailsSheet({
   onDeleted,
 }: TaskDetailsSheetProps) {
   const { identity } = useInternetIdentity();
-  const assignMutation = useAssignPerformer();
   const toggleTelegramMutation = useToggleTelegramDiscussion();
   const deleteMutation = useDeleteTask();
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
@@ -75,7 +71,6 @@ export default function TaskDetailsSheet({
   const isPerformer =
     task.performer &&
     identity?.getPrincipal().toString() === task.performer.toString();
-  const canAccept = !task.performer && !isCreator && !!identity;
   const canComplete = isPerformer && !task.isVerified;
 
   const formattedDeadline = formatDeadline(task.deadline);
@@ -93,22 +88,6 @@ export default function TaskDetailsSheet({
     }
   };
 
-  const handleAccept = async () => {
-    if (!identity) {
-      toast.error("Please login to accept tasks");
-      return;
-    }
-    try {
-      await assignMutation.mutateAsync(task.id);
-      const upiLink = buildUPILink(task.price);
-      window.location.href = upiLink;
-      toast.success("Task accepted! Complete the payment to proceed.");
-      onOpenChange(false);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to accept task");
-    }
-  };
-
   const handleToggleTelegram = async (enabled: boolean) => {
     try {
       await toggleTelegramMutation.mutateAsync({ taskId: task.id, enabled });
@@ -120,25 +99,22 @@ export default function TaskDetailsSheet({
 
   const handleDeleteConfirm = async () => {
     try {
-      // Use ICP task ID string as the SheetDB task_id lookup key
       const sheetTaskId = task.id.toString();
 
-      // 1. Delete from ICP backend
       await deleteMutation.mutateAsync(task.id);
 
-      // 2. Synchronously clean up SheetDB (fire-and-await so UI refresh is accurate)
       await Promise.allSettled([
         deleteTaskFromSheet(sheetTaskId),
         deletePostHistoryByTaskId(sheetTaskId),
         deleteTaskHistoryByTaskId(sheetTaskId),
       ]);
 
-      toast.success("Post deleted");
+      toast.success("Post removed from the feed");
       setIsDeleteDialogOpen(false);
       onOpenChange(false);
       onDeleted?.(sheetTaskId);
     } catch (error: any) {
-      toast.error(error.message || "Failed to delete post");
+      toast.error(error.message || "Failed to remove post");
     }
   };
 
@@ -228,8 +204,6 @@ export default function TaskDetailsSheet({
               )}
             </div>
 
-            {canAccept && <QRCodeDisplay taskId={task.id} price={task.price} />}
-
             {/* Actions */}
             <div className="space-y-3 pt-4">
               <div className="space-y-2">
@@ -278,20 +252,6 @@ export default function TaskDetailsSheet({
                 )}
               </div>
 
-              {canAccept && (
-                <Button
-                  onClick={handleAccept}
-                  disabled={assignMutation.isPending}
-                  className="w-full bg-gradient-to-r from-[oklch(0.8_0.25_150)] to-[oklch(0.7_0.2_270)] hover:opacity-90 text-black font-semibold"
-                  data-ocid="task.accept_button"
-                >
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  {assignMutation.isPending
-                    ? "Processing..."
-                    : "Accept Task & Pay"}
-                </Button>
-              )}
-
               {canComplete && (
                 <Button
                   onClick={() => setIsCompleteModalOpen(true)}
@@ -303,23 +263,15 @@ export default function TaskDetailsSheet({
                 </Button>
               )}
 
-              {task.performer && !canComplete && !isCreator && (
-                <div className="text-center text-sm text-muted-foreground p-4 rounded-xl bg-muted/50">
-                  This task has been claimed by another user
-                </div>
-              )}
-
-              {isCreator && (
-                <Button
-                  onClick={() => setIsDeleteDialogOpen(true)}
-                  variant="destructive"
-                  className="w-full"
-                  data-ocid="task.delete_button"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Post
-                </Button>
-              )}
+              <Button
+                onClick={() => setIsDeleteDialogOpen(true)}
+                variant="destructive"
+                className="w-full"
+                data-ocid="task.remove_post_button"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Remove Post
+              </Button>
             </div>
           </div>
         </SheetContent>
@@ -337,19 +289,19 @@ export default function TaskDetailsSheet({
       >
         <AlertDialogContent
           className="backdrop-blur-xl bg-card/95 border-border"
-          data-ocid="task.delete.dialog"
+          data-ocid="task.remove.dialog"
         >
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+            <AlertDialogTitle>Remove this post?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your
-              post, remove it from the hub, and clear all related history.
+              This will permanently delete the post from everyone's feed and
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel
               disabled={deleteMutation.isPending}
-              data-ocid="task.delete.cancel_button"
+              data-ocid="task.remove.cancel_button"
             >
               Cancel
             </AlertDialogCancel>
@@ -357,9 +309,9 @@ export default function TaskDetailsSheet({
               onClick={handleDeleteConfirm}
               disabled={deleteMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              data-ocid="task.delete.confirm_button"
+              data-ocid="task.remove.confirm_button"
             >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteMutation.isPending ? "Removing..." : "Remove"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
